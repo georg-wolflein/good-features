@@ -1,0 +1,22 @@
+version: "3.7"
+services:
+  main:
+    container_name: georg-histaug
+    build:
+      context: .
+      dockerfile: "Dockerfile"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: ${GPU_COUNT:-all}
+              capabilities: [ gpu ]
+    shm_size: "128gb"
+    ulimits:
+      memlock: -1
+      stack: 67108864
+    volumes:
+      - "${HOST_APP_FOLDER:-~/histaug}:/app"
+      - "/mnt/isilon1/georg/data:/data"
+      - "/mnt/isilon1/georg/metadata:/metadata"

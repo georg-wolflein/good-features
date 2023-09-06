@@ -1,0 +1,17 @@
+h5py~=3.8
+matplotlib~=3.7
+numpy~=1.24
+openpyxl~=3.1
+pandas~=2.0
+scikit-learn~=1.2
+torch~=2.0
+torchmetrics~=0.11.4
+pytorch-lightning~=2.0
+hydra-core
+wandb
+loguru
+torchstain
+opencv-python
+gdown
+ipykernel
+Pillow

@@ -1,0 +1,48 @@
+import hashlib
+from torch import nn
+import torch
+from pathlib import Path
+import numpy as np
+from typing import Literal, Union
+from loguru import logger
+
+
+import histaug
+from .swin_transformer import swin_tiny_patch4_window7_224, ConvStem
+
+
+class CTransPath(nn.Module):
+    def __init__(
+        self, weights_path: Union[Path, str] = Path(histaug.__file__).parent.parent / "weights" / "ctranspath.pth"
+    ):
+        super().__init__()
+        weights_path = Path(weights_path)
+        if not weights_path.exists():
+            logger.info("Downloading weights")
+            weights_path.parent.mkdir(parents=True, exist_ok=True)
+            import gdown
+
+            gdown.download(
+                "https://drive.google.com/u/0/uc?id=1DoDx_70_TLj98gTf6YTXnu4tFhsFocDX&export=download",
+                str(weights_path),
+                quiet=False,
+            )
+
+        sha256 = hashlib.sha256()
+        with weights_path.open("rb") as f:
+            while True:
+                data = f.read(1 << 16)
+                if not data:
+                    break
+                sha256.update(data)
+
+        assert sha256.hexdigest() == "7c998680060c8743551a412583fac689db43cec07053b72dfec6dcd810113539"
+
+        self.model = swin_tiny_patch4_window7_224(embed_layer=ConvStem, pretrained=False)
+        self.model.head = nn.Identity()
+        self.model.load_state_dict(torch.load(weights_path, map_location=torch.device("cpu"))["model"], strict=True)
+
+        self.model.eval()
+
+    def forward(self, *args, **kwargs):
+        return self.model(*args, **kwargs)
