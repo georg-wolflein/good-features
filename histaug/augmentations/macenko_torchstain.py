@@ -5,6 +5,7 @@ from torch import nn
 
 """
 This code is modified from https://github.com/EIDOSLAB/torchstain in order to support GPU, and to ensure the image is returned in the proper format.
+Also added a check for fully transparent images, which would otherwise cause an error.
 """
 
 
@@ -71,10 +72,15 @@ class TorchMacenkoNormalizer(HENormalizer, nn.Module):
         OD, ODhat = self.__convert_rgb2od(I, Io=Io, beta=beta)
 
         if ODhat.numel() == 0:
-            raise FullyTransparentException("Fully transparent image")
+            raise FullyTransparentException("ODhat is empty")
 
         # compute eigenvectors
-        _, eigvecs = torch.linalg.eigh(cov(ODhat.T))
+        try:
+            _, eigvecs = torch.linalg.eigh(cov(ODhat.T))
+        except Exception as e:
+            if "LinAlgError" in e.__class__.__name__:  # should be torch._C._LinalgError but that's not exposed
+                raise FullyTransparentException("could not compute eigenvectors")
+            raise e
         eigvecs = eigvecs[:, [1, 2]]
 
         HE = self.__find_HE(ODhat, eigvecs, alpha)

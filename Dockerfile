@@ -22,31 +22,6 @@ RUN apt update && \
 RUN apt update && \
     apt install -y libgl1-mesa-glx vim
 
-# Install poetry
-# RUN pip install --upgrade pip setuptools && \
-#     pip install poetry && \
-#     poetry config virtualenvs.create true && \
-#     poetry config virtualenvs.in-project true
-
-ADD requirements.txt /tmp/requirements.txt
-
-# Install venv
-RUN apt update && \
-    apt install -y python3.9-venv python3.9-dev && \
-    python -m venv /venv && \
-    . /venv/bin/activate && \
-    pip install -r /tmp/requirements.txt && \
-    pip install --upgrade pip && \
-    pip install wheel numpy && \
-    pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113
-
-# Install dependencies
-# RUN mkdir -p /app
-# WORKDIR /app
-# COPY ./pyproject.toml ./poetry.lock* ./
-# RUN poetry install --no-root
-# RUN rm -rf /app
-
 VOLUME /app
 VOLUME /data
 VOLUME /metadata

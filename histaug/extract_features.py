@@ -75,6 +75,7 @@ def load_features(path: Path):
 
 
 if __name__ == "__main__":
+    torch.manual_seed(42)
     import argparse
 
     parser = argparse.ArgumentParser(description="Extract features and augmented features from a dataset")
@@ -92,7 +93,9 @@ if __name__ == "__main__":
     ds = Kather100k(args.dataset)
     logger.info(f"Loaded dataset with {len(ds)} samples and {len(ds.classes)} classes")
 
-    loader = DataLoader(ds, batch_size=128, shuffle=True, num_workers=8, pin_memory=True)
+    loader = DataLoader(
+        ds, batch_size=128, shuffle=True, num_workers=8, pin_memory=True
+    )  # shuffle is true because image augmentations are done across the whole batch (i.e. same rotation angle for all images per batch)
     model = load_feature_extractor(args.model)
     augmentations = load_augmentations()
 

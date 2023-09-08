@@ -12,7 +12,7 @@ from ..utils import download_file
 
 class RetCCL(nn.Module):
     def __init__(
-        self, weights_path: Union[Path, str] = Path(histaug.__file__).parent.parent / "weights" / "ctranspath.pth"
+        self, weights_path: Union[Path, str] = Path(histaug.__file__).parent.parent / "weights" / "retccl.pth"
     ):
         super().__init__()
 

@@ -5,6 +5,7 @@ from torch import nn
 from loguru import logger
 from typing import Union
 from torchvision import transforms as T
+from torchvision.transforms import functional as TF
 from kornia import augmentation as K
 from functools import partial
 
@@ -33,8 +34,10 @@ class Macenko(nn.Module):
         try:
             Inorm, H, E = self.normalizer.normalize((image * 255).type(torch.uint8))
             return Inorm.type_as(image) / 255
-        except FullyTransparentException:
-            logger.warning("Attempting to Macenko normalize fully transparent image. Returning original image.")
+        except FullyTransparentException as e:
+            logger.warning(
+                f"Attempting to Macenko normalize fully transparent image ({str(e)}). Returning original image."
+            )
             return image
 
     def forward(self, images: torch.Tensor) -> torch.Tensor:
@@ -55,7 +58,7 @@ class Augmentations(dict):
 
 def load_augmentations() -> Augmentations:
     augmentations = Augmentations()
-    augmentations["macenko"] = Macenko()
+    augmentations["Macenko"] = Macenko()
     augmentations["low brightness"] = T.ColorJitter(brightness=(0.7,) * 2)
     augmentations["high brightness"] = T.ColorJitter(brightness=(1.5,) * 2)
     augmentations["low contrast"] = T.ColorJitter(contrast=(0.7,) * 2)
@@ -66,19 +69,28 @@ def load_augmentations() -> Augmentations:
     augmentations["gamma 0.5"] = T.Lambda(lambda x: x**0.5)
     augmentations["gamma 2.0"] = T.Lambda(lambda x: x**2.0)
 
-    augmentations["flip horizontal"] = partial(torch.flip, dims=[-1])
-    augmentations["flip vertical"] = partial(torch.flip, dims=[-2])
-    augmentations["rotate 90°"] = partial(torch.rot90, k=1, dims=[-2, -1])
-    augmentations["rotate 180°"] = partial(torch.rot90, k=2, dims=[-2, -1])
-    augmentations["rotate 270°"] = partial(torch.rot90, k=3, dims=[-2, -1])
-    augmentations["rotate random angle"] = T.RandomRotation(degrees=360)
+    augmentations["flip horizontal"] = T.RandomHorizontalFlip(p=1.0)
+    augmentations["flip vertical"] = T.RandomVerticalFlip(p=1.0)
+    augmentations["rotate 90°"] = partial(TF.rotate, angle=90)
+    augmentations["rotate 180°"] = partial(TF.rotate, angle=180)
+    augmentations["rotate 270°"] = partial(TF.rotate, angle=270)
+    augmentations["rotate random angle"] = T.Lambda(
+        lambda img: TF.rotate(img, angle=(torch.randint(0, 4, (1,)) * 90 + torch.randint(10, 80, (1,))).item())
+    )  # rotate by 0, 90, 180, or 270 degrees plus a random angle between 10 and 80 degrees
     augmentations["zoom 1.5x"] = EnlargeAndCenterCrop(1.5)
     augmentations["zoom 1.75x"] = EnlargeAndCenterCrop(1.75)
     augmentations["zoom 2x"] = EnlargeAndCenterCrop(2)
     augmentations["affine"] = T.RandomAffine(degrees=10, translate=(0.2, 0.2), scale=(0.8, 1.2), shear=10)
-    augmentations["erasing"] = T.RandomErasing(p=1.0, scale=(0.02, 0.25), ratio=(0.3, 3.3), value=0, inplace=False)
-    augmentations["warp perspective"] = T.RandomPerspective(distortion_scale=0.2, p=1.0, fill=0)
+    augmentations["warp perspective"] = T.RandomPerspective(p=1.0, distortion_scale=0.2, fill=0)
     augmentations["jigsaw"] = K.RandomJigsaw(p=1.0, grid=(4, 4), same_on_batch=True)
+    augmentations["Cutout"] = T.RandomErasing(p=1.0, scale=(0.02, 0.25), ratio=(0.3, 3.3), value=0, inplace=False)
+    augmentations["AugMix"] = T.Compose(
+        [
+            T.Lambda(lambda x: (x * 255).type(torch.uint8)),
+            T.AugMix(),
+            T.Lambda(lambda x: x.type(torch.float32) / 255),
+        ]
+    )
 
     augmentations["sharpen"] = T.RandomAdjustSharpness(p=1.0, sharpness_factor=5.0)
     augmentations["gaussian blur"] = T.GaussianBlur(kernel_size=5, sigma=2.0)
