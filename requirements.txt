@@ -17,3 +17,4 @@ ipykernel
 Pillow
 kornia
 umap-learn
+h5py

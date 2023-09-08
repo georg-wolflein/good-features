@@ -42,7 +42,7 @@ class Macenko(nn.Module):
 
 
 def EnlargeAndCenterCrop(zoom_factor: Union[float, int] = 2, patch_size=PATCH_SIZE):
-    return T.Compose([T.Resize(int(zoom_factor * patch_size)), T.CenterCrop(patch_size)])
+    return T.Compose([T.Resize(int(zoom_factor * patch_size), antialias=True), T.CenterCrop(patch_size)])
 
 
 class Augmentations(dict):
