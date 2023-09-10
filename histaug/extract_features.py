@@ -4,12 +4,13 @@ import itertools
 from tqdm import tqdm
 from pathlib import Path
 from loguru import logger
-from typing import List, Dict
+from typing import List, Dict, NamedTuple, Sequence
+import numpy as np
 import h5py
 
 from histaug.data import Kather100k
 from histaug.augmentations import load_augmentations
-from histaug.feature_extractors import load_feature_extractor
+from histaug.feature_extractors import load_feature_extractor, FEATURE_EXTRACTORS
 
 
 def process_dataset(loader, model, augmentations, device="cuda", batches: int = None):
@@ -62,7 +63,15 @@ def save_features(
             aug_group.create_dataset(aug_name, data=feats_aug.numpy())
 
 
-def load_features(path: Path):
+class LoadedFeatures(NamedTuple):
+    feats: np.ndarray
+    feats_augs: Dict[str, np.ndarray]
+    labels: np.ndarray
+    files: np.ndarray
+
+
+def load_features(path: Path, remove_classes: Sequence[str] = ()) -> LoadedFeatures:
+    # Load features
     with h5py.File(path, "r") as f:
         classes = f.attrs["classes"]
 
@@ -71,7 +80,14 @@ def load_features(path: Path):
         files = f["files"][:]
 
         feats_augs = {k: f["feats_augs"][k][:] for k in f["feats_augs"].keys()}
-    return feats, feats_augs, labels, files
+
+    # Remove classes
+    remove_mask = np.isin(labels, remove_classes)
+    feats = feats[~remove_mask]
+    labels = labels[~remove_mask]
+    files = files[~remove_mask]
+    feats_augs = {k: v[~remove_mask] for k, v in feats_augs.items()}
+    return LoadedFeatures(feats=feats, feats_augs=feats_augs, labels=labels, files=files)
 
 
 if __name__ == "__main__":
@@ -84,7 +100,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--model",
         type=str,
-        choices=["ctranspath", "retccl", "resnet50"],
+        choices=list(FEATURE_EXTRACTORS.keys()),
         default="ctranspath",
         help="Feature extractor model",
     )

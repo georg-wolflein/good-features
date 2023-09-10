@@ -4,6 +4,7 @@
 ctranspath.pth
 /figures/
 /weights/
+/results/*.h5
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
