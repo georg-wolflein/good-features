@@ -75,10 +75,10 @@ class LoadedFeatures(NamedTuple):
 
 def load_features(path: Path, remove_classes: Sequence[str] = ()) -> LoadedFeatures:
     f = zarr.open_group(str(path), mode="r")
-    classes = f.attrs["classes"]
+    classes = np.array(f.attrs["classes"])
 
     feats = f["feats"][:]
-    labels = classes[f["labels"]]
+    labels = classes[f["labels"][:]]
     files = f["files"][:]
 
     feats_augs = {k: f["feats_augs"][k][:] for k in f["feats_augs"].keys()}
