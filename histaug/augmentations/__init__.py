@@ -8,6 +8,7 @@ from torchvision import transforms as T
 from torchvision.transforms import functional as TF
 from kornia import augmentation as K
 from functools import partial
+from collections import ChainMap
 
 import histaug
 from .macenko_torchstain import TorchMacenkoNormalizer, FullyTransparentException
@@ -48,12 +49,39 @@ def EnlargeAndCenterCrop(zoom_factor: Union[float, int] = 2, patch_size=PATCH_SI
     return T.Compose([T.Resize(int(zoom_factor * patch_size), antialias=True), T.CenterCrop(patch_size)])
 
 
-class Augmentations(dict):
-    def to(self, device):
-        for k, v in self.items():
-            if isinstance(v, nn.Module):
-                self[k] = v.to(device)
-        return self
+class Augmentations(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self._items = dict()
+
+    def items(self):
+        return self._items.items()
+
+    def keys(self):
+        return self._items.keys()
+
+    def values(self):
+        return self._items.values()
+
+    def __contains__(self, key):
+        return self._items.__contains__(key)
+
+    def __repr__(self):
+        return self._items.__repr__()
+
+    def __iter__(self):
+        return self._items.__iter__()
+
+    def __len__(self):
+        return self._items.__len__()
+
+    def __getitem__(self, key):
+        return self._items.__getitem__(key)
+
+    def __setitem__(self, key, value):
+        if isinstance(value, nn.Module):
+            self.add_module(key.replace(" ", "_").replace("°", "").replace(".", "_"), value)
+        self._items.__setitem__(key, value)
 
 
 def load_augmentations() -> Augmentations:

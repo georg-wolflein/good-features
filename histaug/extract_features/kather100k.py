@@ -1,5 +1,6 @@
 from torch.utils.data import DataLoader
 import torch
+from torch import nn
 import itertools
 from tqdm import tqdm
 from pathlib import Path
@@ -8,15 +9,15 @@ from typing import List, Dict, NamedTuple, Sequence
 import numpy as np
 import zarr
 
-from histaug.data import Kather100k
-from histaug.augmentations import load_augmentations
-from histaug.feature_extractors import load_feature_extractor, FEATURE_EXTRACTORS
+from ..data import Kather100k
+from ..augmentations import load_augmentations, Augmentations
+from ..feature_extractors import load_feature_extractor, FEATURE_EXTRACTORS
+from .augmented_feature_extractor import AugmentedFeatureExtractor
 
 
-def process_dataset(loader, model, augmentations, device="cuda", n_batches: int = None):
-    model.to(device)
-    augmentations.to(device)
-    n_batches = n_batches or len(loader)
+def process_dataset(loader, model: nn.Module, augmentations: Augmentations, device="cuda", n_batches: int = None):
+    augmented_feature_extractor = AugmentedFeatureExtractor(model, augmentations)
+    augmented_feature_extractor.to(device)
 
     with torch.no_grad():
         all_labels = []
@@ -28,11 +29,7 @@ def process_dataset(loader, model, augmentations, device="cuda", n_batches: int 
             itertools.islice(loader, n_batches), desc="Processing dataset", total=n_batches
         ):
             imgs = imgs.to(device)
-            feats = model(imgs)
-
-            feats_augs = {
-                aug_name: model(aug(imgs)) for aug_name, aug in augmentations.items()
-            }  # dict of {aug_name: feats_aug} where feats_aug is a tensor of shape (n_imgs, n_feats)
+            feats, feats_augs = augmented_feature_extractor(imgs)
 
             all_labels.append(labels.detach().cpu())
             all_feats.append(feats.detach().cpu())

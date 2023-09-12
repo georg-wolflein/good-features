@@ -18,3 +18,4 @@ Pillow
 kornia
 umap-learn
 zarr
+pytest

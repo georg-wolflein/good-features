@@ -39,10 +39,10 @@ class SlideDataset(Dataset):
         return patches, slide, index or 0
 
     def transform(self, patches):
-        return torch.from_numpy(patches).float() / 255
+        return (torch.from_numpy(patches).float() / 255).permute(0, 3, 1, 2)
 
     def inverse_transform(self, patches):
-        return (patches * 255).uint8()
+        return (patches * 255).uint8().permute(0, 2, 3, 1).numpy()
 
     def __len__(self):
         return len(self.data)
