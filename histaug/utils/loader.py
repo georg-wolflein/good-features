@@ -1,36 +1,41 @@
-from typing import Any, Iterator, Tuple, Optional
+from typing import Any, Iterator, Tuple, Optional, Callable, TypeVar, Generic
+
+T = TypeVar("T")
 
 
-class PeekableIterator:
+class PeekableIterator(Generic[T]):
     """
     An iterator wrapper that provides a peek functionality to look ahead to the
     next item without consuming it.
 
     Attributes:
         iterator (Iterator): The original iterator to be wrapped.
-        buffer (Optional[Any]): A buffer to hold the next item for peeking.
+        buffer (Optional[T]): A buffer to hold the next item for peeking.
     """
 
-    def __init__(self, iterator: Iterator[Any]):
+    def __init__(self, iterator: Iterator[T]):
         """
         Initialize PeekableIterator.
 
         Args:
             iterator (Iterator): The original iterator to be wrapped.
         """
-        self.iterator: Iterator[Any] = iterator
-        self.buffer: Optional[Any] = None
+        self.iterator: Iterator[T] = iterator
+        self.buffer: Optional[T] = None
 
-    def __iter__(self) -> Iterator[Any]:
+    def __len__(self) -> int:
+        return len(self.iterator)
+
+    def __iter__(self) -> Iterator[T]:
         return self
 
-    def __next__(self) -> Any:
+    def __next__(self) -> T:
         """
         Return the next item from the iterator. If an item is in the buffer
         (due to peeking), it is returned and removed from the buffer.
 
         Returns:
-            Any: The next item from the iterator.
+            T: The next item from the iterator.
         """
         if self.buffer:
             item = self.buffer
@@ -38,13 +43,13 @@ class PeekableIterator:
             return item
         return next(self.iterator)
 
-    def peek(self) -> Optional[Any]:
+    def peek(self) -> Optional[T]:
         """
         Peek at the next item without consuming it. If called multiple times
         consecutively, the same item is returned without advancing the iterator.
 
         Returns:
-            Any: The next item from the iterator, or None if the iterator is exhausted.
+            T: The next item from the iterator, or None if the iterator is exhausted.
         """
         if not self.buffer:
             try:
@@ -54,56 +59,59 @@ class PeekableIterator:
         return self.buffer
 
 
-def patch_loader(loader: PeekableIterator, current_slide: str) -> Iterator[Tuple[Any, str, Any]]:
-    """
-    Generate patches from the provided loader for a specific slide.
+class GroupedLoader(Generic[T]):
+    def __init__(self, loader: Iterator[T], extract_group_from_item: Callable[[T], Any]):
+        """A wrapper around an iterator that groups the data by the group identifier.
 
-    Args:
-        loader (PeekableIterator): The data loader iterator.
-        current_slide (str): The slide identifier.
+        This function creates a generator that yields a tuple containing the group identifier, and a sub-generator that yields the group elements for that group.
 
-    Yields:
-        Tuple: The next patch data tuple for the current slide.
-    """
-    while True:
-        data = loader.peek()
-        if data:
-            _, slide, _ = data
-            if slide == current_slide:
-                yield next(loader)
+        Args:
+            loader (Iterator): The iterator to be wrapped.
+            extract_group_from_slide (Callable[[T], Any]): A callable that extracts the group identifier from the item.
+        """
+        self.loader = PeekableIterator(loader)
+        self.extract_group_from_item = extract_group_from_item
+        self.last_group = None
+
+    def __iter__(self) -> Iterator[Tuple[str, Iterator[T]]]:
+        return self
+
+    def __len__(self) -> int:
+        return len(self.loader)
+
+    def _group_loader(self, current_group: str) -> Iterator[T]:
+        """
+        Yield items from the provided loader for a specific group.
+
+        Args:
+            loader (PeekableIterator): The data loader iterator.
+            current_group (str): The current group identifier.
+            extract_group_from_item (Callable[[T], Any]): A callable that extracts the group identifier from the item.
+
+        Yields:
+            Tuple: The next patch data tuple for the current slide.
+        """
+        while True:
+            data = self.loader.peek()
+            if data:
+                group = self.extract_group_from_item(data)
+                if group == current_group:
+                    yield next(self.loader)
+                else:
+                    return
             else:
-                return
-        else:
-            break
+                break
 
-
-def slide_loader(loader: Iterator[Tuple[Any, str, Any]]) -> Iterator[Tuple[str, Iterator[Tuple[Any, str, Any]]]]:
-    """
-    Generate slides and their corresponding patches from the provided loader.
-
-    This function creates a generator that yields a tuple containing the slide, and a sub-generator that yields the batches of patches for that slide.
-
-    Args:
-        loader (Iterator): The data loader iterator. It should yield tuples of the form (patch, slide, index).
-
-    Yields:
-        Tuple[str, Iterator]: A tuple containing the slide identifier and an iterator
-        over its patches.
-    """
-    loader = PeekableIterator(loader)
-    last_slide = None
-    while True:
-        current_data = loader.peek()
-        if current_data:
-            _, current_slide, _ = current_data
+    def __next__(self) -> Tuple[str, Iterator[T]]:
+        while (current_data := self.loader.peek()) is not None:
+            current_group = self.extract_group_from_item(current_data)
 
             # If the last slide is the same as the current slide, it means the patches of the last slide
             # were not fully consumed. In such a case, we consume the remaining patches of the last slide.
-            if last_slide == current_slide:
-                next(loader)
+            if self.last_group == current_group:
+                next(self.loader)
                 continue
 
-            last_slide = current_slide
-            yield current_slide, patch_loader(loader, current_slide)
-        else:
-            break
+            self.last_group = current_group
+            return current_group, self._group_loader(current_group)
+        raise StopIteration

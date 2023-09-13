@@ -1,6 +1,6 @@
 import pytest
 
-from histaug.utils.loader import PeekableIterator, slide_loader, patch_loader
+from histaug.utils.loader import PeekableIterator, GroupedLoader
 
 
 def test_peekable_iterator():
@@ -31,7 +31,9 @@ def test_patch_loader():
         ("patch3", "slide2", "index3"),
     ]
     it = PeekableIterator(iter(data))
-    slide1_loader = patch_loader(it, "slide1")
+
+    gl = GroupedLoader(it, extract_group_from_item=lambda x: x[1])
+    slide1_loader = gl._group_loader("slide1")
     assert list(slide1_loader) == [
         ("patch1", "slide1", "index1"),
         ("patch2", "slide1", "index2"),
@@ -45,7 +47,7 @@ def test_slide_loader():
         ("patch3", "slide2", "index3"),
         ("patch4", "slide3", "index4"),
     ]
-    loader = slide_loader(iter(data))
+    loader = GroupedLoader(iter(data), extract_group_from_item=lambda x: x[1])
 
     # Extracting slide1 data
     slide1_name, slide1_patches = next(loader)
@@ -77,7 +79,7 @@ def test_slide_loader_partial_consumption():
         ("patch3", "slide2", "index3"),
         ("patch4", "slide3", "index4"),
     ]
-    loader = slide_loader(iter(data))
+    loader = GroupedLoader(iter(data), extract_group_from_item=lambda x: x[1])
 
     # Extracting slide1 data but only consuming one patch
     slide1_name, slide1_patches = next(loader)
