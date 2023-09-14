@@ -34,7 +34,7 @@ SIMILARITY_METRICS: Dict[str, Metric] = {
     "cosine": nn.CosineSimilarity(dim=-1),
     "manhattan": nn.PairwiseDistance(p=1),
     "euclidean": nn.PairwiseDistance(p=2),
-    "mahalanobis": mahalanobis_distance,
+    "mahalanobis": mahalanobis_distance,  # impractical for large datasets
 }
 
 
