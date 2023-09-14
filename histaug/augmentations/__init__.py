@@ -3,12 +3,11 @@ import cv2
 import torch
 from torch import nn
 from loguru import logger
-from typing import Union
+from typing import Union, Sequence, Callable, Any, Mapping
 from torchvision import transforms as T
 from torchvision.transforms import functional as TF
 from kornia import augmentation as K
 from functools import partial
-from collections import ChainMap
 
 import histaug
 from .macenko_torchstain import TorchMacenkoNormalizer, FullyTransparentException
@@ -50,9 +49,10 @@ def EnlargeAndCenterCrop(zoom_factor: Union[float, int] = 2, patch_size=PATCH_SI
 
 
 class Augmentations(nn.Module):
-    def __init__(self):
+    def __init__(self, items=dict()):
         super().__init__()
         self._items = dict()
+        self.update(items)
 
     def items(self):
         return self._items.items()
@@ -83,46 +83,58 @@ class Augmentations(nn.Module):
             self.add_module(key.replace(" ", "_").replace("°", "").replace(".", "_"), value)
         self._items.__setitem__(key, value)
 
+    def update(self, items):
+        for key, value in items.items():
+            self.__setitem__(key, value)
+
+
+_unloaded_augmentations: Mapping[str, Callable[[], Any]] = {
+    "Macenko": partial(Macenko()),
+    "low brightness": partial(T.ColorJitter(brightness=(0.7,) * 2)),
+    "high brightness": partial(T.ColorJitter(brightness=(1.5,) * 2)),
+    "low contrast": partial(T.ColorJitter(contrast=(0.7,) * 2)),
+    "high contrast": partial(T.ColorJitter(contrast=(1.5,) * 2)),
+    "low saturation": partial(T.ColorJitter(saturation=(0.7,) * 2)),
+    "high saturation": partial(T.ColorJitter(saturation=(1.5,) * 2)),
+    "colour jitter": partial(T.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1)),
+    "gamma 0.5": partial(T.Lambda(lambda x: x**0.5)),
+    "gamma 2.0": partial(T.Lambda(lambda x: x**2.0)),
+    "flip horizontal": partial(T.RandomHorizontalFlip(p=1.0)),
+    "flip vertical": partial(T.RandomVerticalFlip(p=1.0)),
+    "rotate 90°": partial(partial(TF.rotate, angle=90)),
+    "rotate 180°": partial(partial(TF.rotate, angle=180)),
+    "rotate 270°": partial(partial(TF.rotate, angle=270)),
+    "rotate random angle": partial(
+        T.Lambda(
+            lambda img: TF.rotate(img, angle=(torch.randint(0, 4, (1,)) * 90 + torch.randint(10, 80, (1,))).item())
+        )
+    ),  # rotate by 0, 90, 180, or 270 degrees plus a random angle between 10 and 80 degrees)
+    "zoom 1.5x": partial(EnlargeAndCenterCrop(1.5)),
+    "zoom 1.75x": partial(EnlargeAndCenterCrop(1.75)),
+    "zoom 2x": partial(EnlargeAndCenterCrop(2)),
+    "affine": partial(T.RandomAffine(degrees=10, translate=(0.2, 0.2), scale=(0.8, 1.2), shear=10)),
+    "warp perspective": partial(T.RandomPerspective(p=1.0, distortion_scale=0.2, fill=0)),
+    "jigsaw": partial(K.RandomJigsaw(p=1.0, grid=(4, 4), same_on_batch=True)),
+    "Cutout": partial(T.RandomErasing(p=1.0, scale=(0.02, 0.25), ratio=(0.3, 3.3), value=0, inplace=False)),
+    "AugMix": partial(
+        T.Compose(
+            [
+                T.Lambda(lambda x: (x * 255).type(torch.uint8)),
+                T.AugMix(),
+                T.Lambda(lambda x: x.type(torch.float32) / 255),
+            ],
+        )
+    ),
+    "sharpen": partial(T.RandomAdjustSharpness(p=1.0, sharpness_factor=5.0)),
+    "gaussian blur": partial(T.GaussianBlur(kernel_size=5, sigma=2.0)),
+    "median blur": partial(K.RandomMedianBlur(p=1.0, kernel_size=5, same_on_batch=True)),
+    "gaussian noise": partial(T.Lambda(lambda x: x + torch.randn_like(x) * 0.1)),
+}
+
 
 def load_augmentations() -> Augmentations:
-    augmentations = Augmentations()
-    augmentations["Macenko"] = Macenko()
-    augmentations["low brightness"] = T.ColorJitter(brightness=(0.7,) * 2)
-    augmentations["high brightness"] = T.ColorJitter(brightness=(1.5,) * 2)
-    augmentations["low contrast"] = T.ColorJitter(contrast=(0.7,) * 2)
-    augmentations["high contrast"] = T.ColorJitter(contrast=(1.5,) * 2)
-    augmentations["low saturation"] = T.ColorJitter(saturation=(0.7,) * 2)
-    augmentations["high saturation"] = T.ColorJitter(saturation=(1.5,) * 2)
-    augmentations["colour jitter"] = T.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1)
-    augmentations["gamma 0.5"] = T.Lambda(lambda x: x**0.5)
-    augmentations["gamma 2.0"] = T.Lambda(lambda x: x**2.0)
+    return Augmentations({k: v() for k, v in _unloaded_augmentations.items()})
 
-    augmentations["flip horizontal"] = T.RandomHorizontalFlip(p=1.0)
-    augmentations["flip vertical"] = T.RandomVerticalFlip(p=1.0)
-    augmentations["rotate 90°"] = partial(TF.rotate, angle=90)
-    augmentations["rotate 180°"] = partial(TF.rotate, angle=180)
-    augmentations["rotate 270°"] = partial(TF.rotate, angle=270)
-    augmentations["rotate random angle"] = T.Lambda(
-        lambda img: TF.rotate(img, angle=(torch.randint(0, 4, (1,)) * 90 + torch.randint(10, 80, (1,))).item())
-    )  # rotate by 0, 90, 180, or 270 degrees plus a random angle between 10 and 80 degrees
-    augmentations["zoom 1.5x"] = EnlargeAndCenterCrop(1.5)
-    augmentations["zoom 1.75x"] = EnlargeAndCenterCrop(1.75)
-    augmentations["zoom 2x"] = EnlargeAndCenterCrop(2)
-    augmentations["affine"] = T.RandomAffine(degrees=10, translate=(0.2, 0.2), scale=(0.8, 1.2), shear=10)
-    augmentations["warp perspective"] = T.RandomPerspective(p=1.0, distortion_scale=0.2, fill=0)
-    augmentations["jigsaw"] = K.RandomJigsaw(p=1.0, grid=(4, 4), same_on_batch=True)
-    augmentations["Cutout"] = T.RandomErasing(p=1.0, scale=(0.02, 0.25), ratio=(0.3, 3.3), value=0, inplace=False)
-    augmentations["AugMix"] = T.Compose(
-        [
-            T.Lambda(lambda x: (x * 255).type(torch.uint8)),
-            T.AugMix(),
-            T.Lambda(lambda x: x.type(torch.float32) / 255),
-        ]
-    )
 
-    augmentations["sharpen"] = T.RandomAdjustSharpness(p=1.0, sharpness_factor=5.0)
-    augmentations["gaussian blur"] = T.GaussianBlur(kernel_size=5, sigma=2.0)
-    augmentations["median blur"] = K.RandomMedianBlur(p=1.0, kernel_size=5, same_on_batch=True)
-    augmentations["gaussian noise"] = T.Lambda(lambda x: x + torch.randn_like(x) * 0.1)
-
-    return augmentations
+def augmentation_names() -> Sequence[str]:
+    return list(_unloaded_augmentations.keys())

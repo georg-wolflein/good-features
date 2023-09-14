@@ -1,2 +1,3 @@
 from .kather100k import Kather100k
 from .slide_dataset import SlideDataset
+from .feature_dataset import FeatureDataset
