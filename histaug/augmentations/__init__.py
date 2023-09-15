@@ -89,46 +89,42 @@ class Augmentations(nn.Module):
 
 
 _unloaded_augmentations: Mapping[str, Callable[[], Any]] = {
-    "Macenko": partial(Macenko()),
-    "low brightness": partial(T.ColorJitter(brightness=(0.7,) * 2)),
-    "high brightness": partial(T.ColorJitter(brightness=(1.5,) * 2)),
-    "low contrast": partial(T.ColorJitter(contrast=(0.7,) * 2)),
-    "high contrast": partial(T.ColorJitter(contrast=(1.5,) * 2)),
-    "low saturation": partial(T.ColorJitter(saturation=(0.7,) * 2)),
-    "high saturation": partial(T.ColorJitter(saturation=(1.5,) * 2)),
-    "colour jitter": partial(T.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1)),
-    "gamma 0.5": partial(T.Lambda(lambda x: x**0.5)),
-    "gamma 2.0": partial(T.Lambda(lambda x: x**2.0)),
-    "flip horizontal": partial(T.RandomHorizontalFlip(p=1.0)),
-    "flip vertical": partial(T.RandomVerticalFlip(p=1.0)),
-    "rotate 90°": partial(partial(TF.rotate, angle=90)),
-    "rotate 180°": partial(partial(TF.rotate, angle=180)),
-    "rotate 270°": partial(partial(TF.rotate, angle=270)),
-    "rotate random angle": partial(
-        T.Lambda(
-            lambda img: TF.rotate(img, angle=(torch.randint(0, 4, (1,)) * 90 + torch.randint(10, 80, (1,))).item())
-        )
+    "Macenko": lambda: Macenko(),
+    "low brightness": lambda: T.ColorJitter(brightness=(0.7,) * 2),
+    "high brightness": lambda: T.ColorJitter(brightness=(1.5,) * 2),
+    "low contrast": lambda: T.ColorJitter(contrast=(0.7,) * 2),
+    "high contrast": lambda: T.ColorJitter(contrast=(1.5,) * 2),
+    "low saturation": lambda: T.ColorJitter(saturation=(0.7,) * 2),
+    "high saturation": lambda: T.ColorJitter(saturation=(1.5,) * 2),
+    "colour jitter": lambda: T.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1),
+    "gamma 0.5": lambda: T.Lambda(lambda x: x**0.5),
+    "gamma 2.0": lambda: T.Lambda(lambda x: x**2.0),
+    "flip horizontal": lambda: T.RandomHorizontalFlip(p=1.0),
+    "flip vertical": lambda: T.RandomVerticalFlip(p=1.0),
+    "rotate 90°": lambda: partial(TF.rotate, angle=90),
+    "rotate 180°": lambda: partial(TF.rotate, angle=180),
+    "rotate 270°": lambda: partial(TF.rotate, angle=270),
+    "rotate random angle": lambda: T.Lambda(
+        lambda img: TF.rotate(img, angle=(torch.randint(0, 4, (1,)) * 90 + torch.randint(10, 80, (1,))).item())
     ),  # rotate by 0, 90, 180, or 270 degrees plus a random angle between 10 and 80 degrees)
-    "zoom 1.5x": partial(EnlargeAndCenterCrop(1.5)),
-    "zoom 1.75x": partial(EnlargeAndCenterCrop(1.75)),
-    "zoom 2x": partial(EnlargeAndCenterCrop(2)),
-    "affine": partial(T.RandomAffine(degrees=10, translate=(0.2, 0.2), scale=(0.8, 1.2), shear=10)),
-    "warp perspective": partial(T.RandomPerspective(p=1.0, distortion_scale=0.2, fill=0)),
-    "jigsaw": partial(K.RandomJigsaw(p=1.0, grid=(4, 4), same_on_batch=True)),
-    "Cutout": partial(T.RandomErasing(p=1.0, scale=(0.02, 0.25), ratio=(0.3, 3.3), value=0, inplace=False)),
-    "AugMix": partial(
-        T.Compose(
-            [
-                T.Lambda(lambda x: (x * 255).type(torch.uint8)),
-                T.AugMix(),
-                T.Lambda(lambda x: x.type(torch.float32) / 255),
-            ],
-        )
+    "zoom 1.5x": lambda: EnlargeAndCenterCrop(1.5),
+    "zoom 1.75x": lambda: EnlargeAndCenterCrop(1.75),
+    "zoom 2x": lambda: EnlargeAndCenterCrop(2),
+    "affine": lambda: T.RandomAffine(degrees=10, translate=(0.2, 0.2), scale=(0.8, 1.2), shear=10),
+    "warp perspective": lambda: T.RandomPerspective(p=1.0, distortion_scale=0.2, fill=0),
+    "jigsaw": lambda: K.RandomJigsaw(p=1.0, grid=(4, 4), same_on_batch=True),
+    "Cutout": lambda: T.RandomErasing(p=1.0, scale=(0.02, 0.25), ratio=(0.3, 3.3), value=0, inplace=False),
+    "AugMix": lambda: T.Compose(
+        [
+            T.Lambda(lambda x: (x * 255).type(torch.uint8)),
+            T.AugMix(),
+            T.Lambda(lambda x: x.type(torch.float32) / 255),
+        ],
     ),
-    "sharpen": partial(T.RandomAdjustSharpness(p=1.0, sharpness_factor=5.0)),
-    "gaussian blur": partial(T.GaussianBlur(kernel_size=5, sigma=2.0)),
-    "median blur": partial(K.RandomMedianBlur(p=1.0, kernel_size=5, same_on_batch=True)),
-    "gaussian noise": partial(T.Lambda(lambda x: x + torch.randn_like(x) * 0.1)),
+    "sharpen": lambda: T.RandomAdjustSharpness(p=1.0, sharpness_factor=5.0),
+    "gaussian blur": lambda: T.GaussianBlur(kernel_size=5, sigma=2.0),
+    "median blur": lambda: K.RandomMedianBlur(p=1.0, kernel_size=5, same_on_batch=True),
+    "gaussian noise": lambda: T.Lambda(lambda x: x + torch.randn_like(x) * 0.1),
 }
 
 
