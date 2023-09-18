@@ -1,0 +1,46 @@
+defaults:
+  - _self_
+  - dataset@dataset: tcga_brca_subtypes
+
+settings:
+  feature_dim: 768
+
+name: experiment
+project: histaug
+output_dir: /data/histaug/results/train/${dataset.name}
+seed: 0 # leave empty to use random seed
+dataset:
+  # name: tcga_brca_subtypes
+  # clini_tables: ["/metadata/TCGA_BRCA_CLINI.xlsx"]
+  # slide_tables: ["/metadata/TCGA_BRCA_SLIDE_DX.csv"]
+  # feature_dirs: ["/data/shiprec/TCGA-BRCA-DX"]
+  # filename_col: FILENAME
+  # patient_col: PATIENT
+  # targets:
+  #   - column: Subtype
+  #     type: categorical
+  #     classes: [BRCA_Basal, BRCA_Her2, BRCA_LumA, BRCA_LumB, BRCA_Normal]
+  #     weights: [0.1066, 0.2413, 0.0358, 0.0871, 0.5291]
+  batch_size: 1
+  instances_per_bag: 4096
+  pad: False
+  num_workers: 8
+  choose_one_slide_per_patient: false
+model:
+  _target_: histaug.train.models.MeanAveragePooling
+  d_features: 768
+  hidden_dim: 256
+  targets: ${dataset.targets}
+deploy:
+  checkpoint: /mnt/bulk/gwoelflein/georg-transformers/output/mq1jcaq8/lightning_logs/version_0/checkpoints/last.ckpt
+learning_rate: 3e-4
+early_stopping:
+  metric: val/${dataset.targets[0].column}/auroc
+  goal: max
+  patience: 10
+  enabled: false
+restore_best_checkpoint: true
+max_epochs: 30
+accumulate_grad_samples: 16
+grad_clip: .5
+device: # leave empty to use 1 GPU
