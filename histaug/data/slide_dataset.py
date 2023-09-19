@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Union, Optional, Sequence
 import zarr
 import torch
+import math
 
 
 class SlideDataset(Dataset):
@@ -17,7 +18,7 @@ class SlideDataset(Dataset):
         self.augmentations = augmentations
         self.batch_size = batch_size
         self.num_patches = self.zarr_group["patches"].shape[0]
-        self.num_batches = self.num_patches // self.batch_size if self.batch_size else 1
+        self.num_batches = math.ceil(self.num_patches / self.batch_size) if self.batch_size else 1
         self.name = slide.stem
 
     def __getitem__(self, index):
