@@ -43,18 +43,22 @@ class SlideDataset(Dataset):
 
 
 class SlidesDataset:
-    def __init__(self, root: Union[str, Path], batch_size: Optional[int] = None):
+    def __init__(self, root: Union[str, Path], batch_size: Optional[int] = None, start: int = 0, end: int = None):
         """This dataset is a collection of patches from the slides in the root directory.
         Each element of the dataset is a batch of patches from a single slide.
 
         Args:
             root (Union[str, Path]): Path to the root directory of the dataset.
             batch_size (Optional[int], optional): Number of patches per iteration. Defaults to None (all patches).
+            start (int, optional): Index of the first slide to include. Defaults to 0.
+            end (int, optional): Index of the last slide to include. Defaults to None (all slides).
         """
         super().__init__()
 
         self.root = Path(root)
-        self.slides = list(self.root.glob("*.zarr"))
+        slides = sorted(self.root.glob("*.zarr"))
+        end = end or len(slides)
+        self.slides = slides[start:end]
         self.batch_size = batch_size
 
     def __getitem__(self, index) -> SlideDataset:

@@ -78,12 +78,16 @@ if __name__ == "__main__":
         help="Feature extractor model",
     )
     parser.add_argument("--device", type=str, default="cuda", help="Device to use for feature extraction")
+    parser.add_argument("--start", type=int, default=0, help="Index of the first slide to process")
+    parser.add_argument("--end", type=int, default=None, help="Index of the last slide to process")
     args = parser.parse_args()
 
     output_folder = args.output / args.model
     output_folder.mkdir(parents=True, exist_ok=True)
 
-    ds = SlidesDataset(args.dataset, batch_size=args.batch_size)  # dataset already loads patches in batches
+    ds = SlidesDataset(
+        args.dataset, batch_size=args.batch_size, start=args.start, end=args.end
+    )  # dataset already loads patches in batches
 
     logger.info(f"Loaded dataset with {len(ds)} slides, will process in batches of {args.batch_size} patches")
 
