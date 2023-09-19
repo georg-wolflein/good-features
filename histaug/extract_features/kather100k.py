@@ -47,7 +47,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Extract features and augmented features from a dataset")
     parser.add_argument("--dataset", type=Path, default="/data/NCT-CRC-HE-100K", help="Path to the Kather100k dataset")
     parser.add_argument(
-        "--output", type=Path, default="/data/results/histaug/kather100k", help="Path to the output folder"
+        "--output", type=Path, default="/data/histaug/results/kather100k", help="Path to the output folder"
     )
     parser.add_argument(
         "--batch-size",
@@ -85,5 +85,11 @@ if __name__ == "__main__":
 
     logger.info(f"Saving features to {output_folder}")
     save_features(
-        file=output_folder, feats=feats, feats_augs=feats_augs, labels=labels, files=files, classes=ds.classes
+        file=output_folder,
+        feats=feats,
+        coords=None,
+        feats_augs=feats_augs,
+        labels=labels,
+        files=files,
+        classes=ds.classes,
     )

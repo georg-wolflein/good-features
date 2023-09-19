@@ -1,14 +1,18 @@
 #!/bin/bash
 
-model="swin"
+if [ "$1" = "" ]; then
+    echo "Usage: $0 <model> <gpu1> <gpu2> ..."
+    exit 1
+fi
 
+model="$1" # "ctranspath" "swin" "retccl" "resnet50" "owkin" "vit"
+
+GPUS=("${@:2}")
 CMDS=(
     "env/bin/python -m histaug.extract_features.slide_dataset --model $model --start 0 --end 400"
     "env/bin/python -m histaug.extract_features.slide_dataset --model $model --start 400 --end 800"
     "env/bin/python -m histaug.extract_features.slide_dataset --model $model --start 800"
 )
-
-GPUS=(2 3 4)
 
 session="extract-$model"
 tmux new-session -d -s $session

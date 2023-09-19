@@ -43,7 +43,8 @@ def save_features(
     if files is not None:
         f.create_dataset("files", data=np.array(files, dtype=str), chunks=False)
     f.create_dataset("feats", data=ensure_numpy(feats), chunks=(chunk_size, *feats.shape[1:]))
-    f.create_dataset("coords", data=ensure_numpy(coords), chunks=-1)
+    if coords is not None:
+        f.create_dataset("coords", data=ensure_numpy(coords), chunks=-1)
     aug_group = f.create_group("feats_augs")
     for aug_name, feats_aug in feats_augs.items():
         aug_group.create_dataset(aug_name, data=ensure_numpy(feats_aug), chunks=(chunk_size, *feats_aug.shape[1:]))
@@ -64,7 +65,7 @@ def load_features(path: Path, remove_classes: Sequence[str] = ()) -> LoadedFeatu
     feats = f["feats"][:]
     labels = classes[f["labels"][:]] if classes is not None and "labels" in f else None
     files = f["files"][:] if "files" in f else None
-    coords = f["coords"][:]
+    coords = f["coords"][:] if "coords" in f else None
 
     feats_augs = {k: f["feats_augs"][k][:] for k in f["feats_augs"].keys()}
 
@@ -75,6 +76,4 @@ def load_features(path: Path, remove_classes: Sequence[str] = ()) -> LoadedFeatu
         labels = labels[~remove_mask]
         files = files[~remove_mask]
         feats_augs = {k: v[~remove_mask] for k, v in feats_augs.items()}
-    return LoadedFeatures(
-        feats=feats, feats_augs=feats_augs, coords=coords, patch_index_grid=patch_index_grid, labels=labels, files=files
-    )
+    return LoadedFeatures(feats=feats, feats_augs=feats_augs, coords=coords, labels=labels, files=files)

@@ -1,12 +1,12 @@
 #!/bin/bash
 
-MODELS=(ctranspath retccl resnet50 swin)
-GPUS=(4 5 6 7)
-OUT_DIR="/app/results"
-
-mkdir -p $OUT_DIR
-
+MODELS=(ctranspath swin retccl resnet50 owkin vit)
+GPUS=(2 3 4 5 6 7)
+# MODELS=(ctranspath swin)
+# MODELS=(owkin vit)
+# GPUS=(0 1)
 session="extract"
+
 tmux new-session -d -s $session
 
 for i in "${!MODELS[@]}"; do
@@ -18,7 +18,7 @@ for i in "${!MODELS[@]}"; do
         tmux select-layout -t $session tiled
     fi
 
-    cmd="CUDA_VISIBLE_DEVICES=$gpu env/bin/python -m histaug.extract_features --model $model --output $OUT_DIR/kather100k_$model.zarr"
+    cmd="CUDA_VISIBLE_DEVICES=$gpu env/bin/python -m histaug.extract_features.kather100k --model $model"
     tmux send-keys -t $session "$cmd" ENTER
 done
 
