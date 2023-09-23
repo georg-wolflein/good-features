@@ -10,12 +10,10 @@ class SlideDataset(Dataset):
     def __init__(
         self,
         slide: Union[str, Path],
-        augmentations: Optional[Sequence[str]] = None,
         batch_size: Optional[int] = None,
     ):
         slide = Path(slide)
         self.zarr_group = zarr.open_group(str(slide), mode="r")
-        self.augmentations = augmentations
         self.batch_size = batch_size
         self.num_patches = self.zarr_group["patches"].shape[0]
         self.num_batches = math.ceil(self.num_patches / self.batch_size) if self.batch_size else 1
@@ -39,7 +37,7 @@ class SlideDataset(Dataset):
         return (torch.from_numpy(patches).float() / 255).permute(0, 3, 1, 2)
 
     def inverse_transform(self, patches):
-        return (patches * 255).uint8().permute(0, 2, 3, 1).numpy()
+        return (patches * 255).byte().permute(0, 2, 3, 1).numpy()
 
 
 class SlidesDataset:

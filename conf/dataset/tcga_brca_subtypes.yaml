@@ -1,7 +1,7 @@
 name: tcga_brca_subtypes
 clini_tables: ["/metadata/TCGA_BRCA_CLINI.xlsx"]
 slide_tables: ["/metadata/shiprec/TCGA_BRCA_SLIDE_DX.csv"]
-feature_dirs: ["/data/histaug/results/TCGA-BRCA-DX/ctranspath"]
+feature_dirs: ["/data/histaug/results/TCGA-BRCA-DX/${settings.feature_extractor}"]
 filename_col: FILENAME
 patient_col: PATIENT
 targets:

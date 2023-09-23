@@ -4,8 +4,9 @@ defaults:
 
 settings:
   feature_dim: 768
+  feature_extractor: ctranspath
 
-name: experiment
+name: train-${dataset.name}-${settings.feature_extractor}
 project: histaug
 output_dir: /data/histaug/results/train/${dataset.name}
 seed: 0 # leave empty to use random seed
@@ -27,7 +28,8 @@ dataset:
   num_workers: 8
   choose_one_slide_per_patient: false
 model:
-  _target_: histaug.train.models.MeanAveragePooling
+  # _target_: histaug.train.models.MeanAveragePooling
+  _target_: histaug.train.models.AttentionMIL
   d_features: 768
   hidden_dim: 256
   targets: ${dataset.targets}

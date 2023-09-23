@@ -95,6 +95,4 @@ if __name__ == "__main__":
     augmentations = load_augmentations()
 
     logger.info(f"Processing dataset, saving features to {output_folder}")
-    feats, feats_augs, labels, files = process_dataset(
-        ds, model, augmentations, output_folder, device=args.device, num_workers=8
-    )
+    process_dataset(ds, model, augmentations, output_folder, device=args.device, num_workers=8)
