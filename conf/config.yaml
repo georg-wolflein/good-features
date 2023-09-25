@@ -13,17 +13,17 @@ output_dir: /data/histaug/results/train/${dataset.name}
 seed: 0 # leave empty to use random seed
 dataset: # some more options will be added by the dataset config in conf/dataset
   augmentations: # will be overwritten by augmentations from conf/augmentations
-  batch_size: 1
+  batch_size: 32
   instances_per_bag: 4096
-  pad: False
-  num_workers: 8
-  choose_one_slide_per_patient: false
+  num_workers: 32
+accumulate_grad_samples: #8
 model:
   # _target_: histaug.train.models.MeanAveragePooling
   _target_: histaug.train.models.AttentionMIL
   d_features: 768
-  hidden_dim: 256
+  hidden_dim: 512
   targets: ${dataset.targets}
+  batchnorm: true
 deploy:
   checkpoint: #/mnt/bulk/gwoelflein/georg-transformers/output/mq1jcaq8/lightning_logs/version_0/checkpoints/last.ckpt
 tune_lr: false
@@ -31,8 +31,8 @@ optimizer:
   _target_: torch.optim.AdamW
   lr: 3e-4
 scheduler:
-  _target_: torch.optim.lr_scheduler.CosineAnnealingLR
-  T_max: ${max_epochs}
+  # _target_: torch.optim.lr_scheduler.CosineAnnealingLR
+  # T_max: ${max_epochs}
 early_stopping:
   metric: val/${dataset.targets[0].column}/auroc
   goal: max
@@ -40,6 +40,5 @@ early_stopping:
   enabled: false
 restore_best_checkpoint: true
 max_epochs: 50
-accumulate_grad_samples: 8
 grad_clip: .5
 device: # leave empty to use 1 GPU

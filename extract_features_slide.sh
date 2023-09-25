@@ -19,7 +19,7 @@ CMDS=(
 )
 
 # session="extract-$model"
-session="extract"
+session="extract-lunit"
 
 # Check if session exists
 tmux has-session -t $session 2>/dev/null

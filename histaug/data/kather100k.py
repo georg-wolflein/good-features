@@ -1,23 +1,13 @@
 from torchvision.datasets import ImageFolder
-from torchvision import transforms as T
 from pathlib import Path
 
-from ..feature_extractors.utils import IMAGENET_MEAN, IMAGENET_STD, UnNormalize
+from ..utils.images import transform_with_norm, inverse_transform_with_norm
 
 
 class Kather100k(ImageFolder):
-    transform = T.Compose(
-        [
-            T.ToTensor(),
-            T.Normalize(
-                mean=IMAGENET_MEAN,
-                std=IMAGENET_STD,
-            ),
-        ]
-    )
-    inverse_transform = T.Compose([UnNormalize(mean=IMAGENET_MEAN, std=IMAGENET_STD), T.ToPILImage()])
-
-    def __init__(self, root):
+    def __init__(self, root, mean: tuple, std: tuple):
+        self.transform = transform_with_norm(mean, std)
+        self.inverse_transform = inverse_transform_with_norm(mean, std)
         super().__init__(root=root, transform=self.transform)
 
     def __getitem__(self, index):

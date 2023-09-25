@@ -32,7 +32,7 @@ class TargetEncoder(abc.ABC):
 class CategoricalTargetEncoder(TargetEncoder):
     def __call__(self, clini_df: pd.DataFrame) -> torch.Tensor:
         values = clini_df[self.target_cfg.column].map({c: i for i, c in enumerate(self.target_cfg.classes)})
-        return F.one_hot(torch.tensor(values.values, dtype=torch.long), len(self.target_cfg.classes)).float()
+        return torch.tensor(values.values, dtype=torch.long)
 
     fit = __call__
 

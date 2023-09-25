@@ -8,7 +8,7 @@ import shutil
 
 from ..data import SlidesDataset
 from ..augmentations import load_augmentations, Augmentations
-from ..feature_extractors import load_feature_extractor, FEATURE_EXTRACTORS
+from ..feature_extractors import load_feature_extractor, FEATURE_EXTRACTORS, FEATURE_EXTRACTORS_NORM
 from ..utils import save_features, check_version
 from .augmented_feature_extractor import AugmentedFeatureExtractor
 
@@ -85,8 +85,15 @@ if __name__ == "__main__":
     output_folder = args.output / args.model
     output_folder.mkdir(parents=True, exist_ok=True)
 
+    norm = FEATURE_EXTRACTORS_NORM[args.model]
+
     ds = SlidesDataset(
-        args.dataset, batch_size=args.batch_size, start=args.start, end=args.end
+        args.dataset,
+        batch_size=args.batch_size,
+        start=args.start,
+        end=args.end,
+        mean=norm.mean,
+        std=norm.std,
     )  # dataset already loads patches in batches
 
     logger.info(f"Loaded dataset with {len(ds)} slides, will process in batches of {args.batch_size} patches")

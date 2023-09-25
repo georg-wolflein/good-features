@@ -15,7 +15,6 @@ from loguru import logger
 
 from .encoders import vit_base
 from .core import Extractor
-from ..utils import IMAGENET_MEAN, IMAGENET_STD
 
 
 class iBOTViT(Extractor):  # pylint: disable=abstract-method
@@ -43,14 +42,10 @@ class iBOTViT(Extractor):  # pylint: disable=abstract-method
         self,
         architecture="vit_base_pancan",
         encoder="student",
-        mean: Tuple[float, float, float] = IMAGENET_MEAN,
-        std: Tuple[float, float, float] = IMAGENET_STD,
         weights_path: Optional[str] = None,
     ):
         super(iBOTViT, self).__init__()
 
-        self.mean = mean
-        self.std = std
         self.encoder = encoder
 
         # Load weights for iBOT[ViT-B]PanCancer.
@@ -68,23 +63,6 @@ class iBOTViT(Extractor):  # pylint: disable=abstract-method
         # Set weights with state_dict.
         msg = self.feature_extractor.load_state_dict(state_dict, strict=False)
         logger.info(f"Pretrained weights found at {self._weights_path} and loaded with msg: {msg}")
-
-    @property
-    def transform(self):
-        """Transform method to apply element wise.
-
-        Returns
-        -------
-        transform: Callable[[Input], Transformed]
-        """
-        transform_ops = [
-            transforms.ToTensor(),
-            transforms.Normalize(
-                mean=self.mean,
-                std=self.std,
-            ),
-        ]
-        return transforms.Compose(transform_ops)
 
     def __call__(self, images: torch.Tensor) -> torch.Tensor:
         """

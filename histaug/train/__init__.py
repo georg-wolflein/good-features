@@ -82,8 +82,8 @@ class LitMilTransformer(pl.LightningModule):
         self.loss_weights = {target.column: target.get("weight", 1.0) for target in self.targets}
 
     def step(self, batch, step_name=None):
-        feats, coords, targets, *_ = batch
-        logits = self(feats, coords)
+        feats, coords, mask, targets, *_ = batch
+        logits = self(feats, coords, mask)
 
         # Calculate the CE or MSE loss for each target, then sum them
         losses = {
@@ -112,8 +112,6 @@ class LitMilTransformer(pl.LightningModule):
             for target in self.targets:
                 target_metrics = getattr(self, f"{step_name}_target_metrics")[target.column]
                 y_true = targets[target.column]
-                if target.type == "categorical":
-                    y_true = y_true.argmax(dim=1)
                 target_metrics.update(logits[target.column], y_true)
                 self.log_dict(
                     {f"{step_name}/{target.column}/{name}": metric for name, metric in target_metrics.items()},
@@ -134,8 +132,8 @@ class LitMilTransformer(pl.LightningModule):
         return self.step(batch, step_name="test")
 
     def predict_step(self, batch, batch_idx, dataloader_idx=0):
-        feats, coords, *_ = batch
-        logits = self(feats, coords)
+        feats, coords, mask = batch
+        logits = self(feats, coords, mask)
 
         softmaxed = {
             target_label: (torch.softmax(x, -1) if self.cfg[target_label].type == "categorical" else x)
@@ -238,7 +236,9 @@ def train(
         max_epochs=cfg.max_epochs,
         accelerator="gpu",
         devices=cfg.device or 1,
-        accumulate_grad_batches=cfg.accumulate_grad_samples // cfg.dataset.batch_size,
+        accumulate_grad_batches=cfg.accumulate_grad_samples // cfg.dataset.batch_size
+        if cfg.accumulate_grad_samples
+        else 1,
         gradient_clip_val=cfg.grad_clip,
         logger=[CSVLogger(save_dir=out_dir), wandb_logger],
     )
@@ -313,7 +313,6 @@ def app(cfg: DictConfig) -> None:
         bags=train_df.path.values,
         targets=train_targets,
         instances_per_bag=cfg.dataset.instances_per_bag,
-        pad=cfg.dataset.pad,
         augmentations=cfg.dataset.augmentations,
     )
 
@@ -330,7 +329,6 @@ def app(cfg: DictConfig) -> None:
         bags=valid_df.path.values,
         targets=valid_targets,
         instances_per_bag=cfg.dataset.instances_per_bag,
-        pad=cfg.dataset.pad,
         augmentations=[None],
     )
     valid_dl = DataLoader(

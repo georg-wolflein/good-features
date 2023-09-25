@@ -16,7 +16,6 @@ class FeatureDataset(Dataset):
         bags: Sequence[Union[str, Path]],
         targets: Optional[Mapping[str, torch.Tensor]],
         instances_per_bag: Optional[int] = None,
-        pad: bool = False,
         augmentations: Sequence[str] = (None, *augmentation_names()),
     ):
         """This dataset yields feature vectors for one slide at a time.
@@ -24,7 +23,6 @@ class FeatureDataset(Dataset):
         Args:
             bags (Sequence[Union[str, Path]]): Paths to bags of features.
             instances_per_bag (Optional[int], optional): Number of instances to sample from each bag. Defaults to None (all instances).
-            pad (bool, optional): If the number of instances in a bag is less than instances_per_bag, pad the remaining instances with zeros. Defaults to False.
             augmentations (Sequence[str], optional): Augmentations to apply. Be sure to include None as an augmentation; this is the original feature vector with no augmentation applied.
         """
 
@@ -41,38 +39,48 @@ class FeatureDataset(Dataset):
         self.pad = pad
         self.augmentations = augmentations
         self.slides = sorted(
-            (sorted((Path(b) for b in bag), key=lambda b: b.stem)[0] for bag in bags), key=lambda b: b.stem
-        )  # NOTE: this is a dirty hack; we are using the first bag in each list of bags, but we should be using all bags in each list
+            (sorted((Path(b) for b in bag), key=lambda b: b.stem) for bag in bags), key=lambda b: b[0].stem
+        )
         self.targets = targets
 
     def __getitem__(self, index):
-        slide = self.slides[index]
-        features = zarr.open_group(str(slide), mode="r")
-        total_num_patches = features["feats"].shape[0]
+        slides = self.slides[index]  # we may have multiple slides per patient
+        features = [zarr.open_group(str(slide), mode="r") for slide in slides]
+        num_patches_per_slide = [f["feats"].shape[0] for f in features]
+        total_num_patches = sum(num_patches_per_slide)
         num_patches = min(total_num_patches, self.instances_per_bag or float("inf"))
         augmentations_per_patch = np.random.randint(len(self.augmentations), size=(num_patches,))
         indices = np.random.permutation(total_num_patches)[:num_patches]
-        indices_per_augmentation = {
-            augmentation: indices[augmentations_per_patch == i] for i, augmentation in enumerate(self.augmentations)
-        }
-        features_per_augmentation = {
-            augmentation: features["feats" if augmentation is None else f"feats_augs/{augmentation}"][indices]
-            for augmentation, indices in indices_per_augmentation.items()
-        }
+        indices = np.concatenate(
+            [
+                np.stack([np.zeros(n, dtype="long") + i, np.arange(n, dtype="long")], axis=-1)
+                for i, n in enumerate(num_patches_per_slide)
+            ],
+            axis=0,
+        )[
+            indices
+        ]  # indices are now (slide_index, patch_index) pairs
+        indices = np.concatenate(
+            [indices, np.expand_dims(augmentations_per_patch, axis=-1)], axis=-1
+        )  # indices are now (slide_index, patch_index, augmentation_index) triples
 
-        feats = np.concatenate(list(features_per_augmentation.values()))
-        coords = features["coords"][indices]
+        feats = []
+        coords = []
 
-        augmentations = np.array(
-            list(
-                itertools.chain.from_iterable(
-                    [self.augmentations.index(aug)] * len(indices) for aug, indices in indices_per_augmentation.items()
+        for slide_index, f in enumerate(features):
+            slide_indices = indices[indices[:, 0] == slide_index]
+            for augmentation_index, augmentation in enumerate(self.augmentations):
+                augmentation_indices = slide_indices[slide_indices[:, 2] == augmentation_index]
+                feats.append(
+                    f["feats" if augmentation is None else f"feats_augs/{augmentation}"][augmentation_indices[:, 1]]
                 )
-            )
-        )
+                coords.append(f["coords"][augmentation_indices[:, 1]])
+
+        feats = np.concatenate(feats)
+        coords = np.concatenate(coords)
         labels = {label: target[index] for label, target in self.targets.items()} if self.targets else None
 
-        return feats, coords, labels, augmentations, indices, slide.stem
+        return feats, coords, labels, index
 
     def transform(self, patches):
         return patches
@@ -85,23 +93,19 @@ class FeatureDataset(Dataset):
 
     def collate_fn(self, batch):
         """Collate a batch of features into a single tensor"""
-        feats, coords, labels, augmentations, indices, slide_names = zip(*batch)
-        n_max = max(f.shape[0] for f in feats)
+        feats, coords, labels, indices = zip(*batch)
+        n_per_instance = [f.shape[0] for f in feats]
+        n_max = max(n_per_instance)
         feats = np.stack([pad(f, n_max, axis=0) for f in feats])
         coords = np.stack([pad(c, n_max, axis=0) for c in coords])
-        augmentations = np.stack([pad(a, n_max, axis=0) for a in augmentations])
-        indices = np.stack(
-            [pad(i, n_max, axis=0, fill_value=-1) for i in indices]
-        )  # NOTE: -1 means that the instance was padded
-        slide_names = np.array(slide_names)
         labels = {label: torch.stack([l[label] for l in labels]) for label in labels[0]} if len(labels) > 0 else None
+        mask = torch.arange(n_max) < torch.tensor(n_per_instance).unsqueeze(-1)
         return (
             torch.from_numpy(feats),
             torch.from_numpy(coords),
+            mask,
             labels,
-            torch.from_numpy(augmentations),
-            torch.from_numpy(indices),
-            slide_names,
+            torch.tensor(indices, dtype=torch.long),
         )
 
     def dummy_batch(self, batch_size: int):
@@ -112,9 +116,9 @@ class FeatureDataset(Dataset):
         tile_tokens = torch.rand((batch_size, instances_per_bag, d_model))
         tile_positions = torch.rand((batch_size, instances_per_bag, 2)) * 100
         labels = {label: value.expand(batch_size, *value.shape) for label, value in sample_labels.items()}
-        indices = np.expand_dims(torch.arange(self.instances_per_bag), axis=0).repeat(batch_size, axis=0)
-        augmentations = np.zeros((batch_size, instances_per_bag), dtype=int)
-        return tile_tokens, tile_positions, labels, augmentations, indices, "sample"
+        indices = torch.arange(batch_size, dtype=torch.long)
+        mask = torch.ones((batch_size, instances_per_bag), dtype=torch.bool)
+        return tile_tokens, tile_positions, mask, labels, indices
 
 
 def pad(x: np.ndarray, size: int, axis: int, fill_value: Any = 0):

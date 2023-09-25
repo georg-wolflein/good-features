@@ -1,10 +1,15 @@
 from torchvision.models import resnet50, ResNet50_Weights, swin_t, Swin_T_Weights, vit_b_16, ViT_B_16_Weights
 from torch import nn
 import torch
+from functools import partial
+from torchvision import transforms as T
+from collections import namedtuple
 
 from .ctranspath import CTransPath
 from .retccl import RetCCL
 from .owkin import Owkin
+from .lunit import resnet50 as lunit_resnet50, vit_small as lunit_vit_small
+from ..utils.images import IMAGENET_MEAN, IMAGENET_STD
 
 __all__ = [
     "CTransPath",
@@ -14,6 +19,7 @@ __all__ = [
     "Owkin",
     "load_feature_extractor",
     "FEATURE_EXTRACTORS",
+    "FEATURE_EXTRACTORS_NORM",
 ]
 
 
@@ -64,6 +70,12 @@ class ViT(nn.Module):
         return feats
 
 
+_imagenet_norm = namedtuple("norm", ["mean", "std"])(mean=IMAGENET_MEAN, std=IMAGENET_STD)
+_lunit_norm = namedtuple("norm", ["mean", "std"])(
+    mean=(0.70322989, 0.53606487, 0.66096631), std=(0.21716536, 0.26081574, 0.20723464)
+)  # https://github.com/lunit-io/benchmark-ssl-pathology/releases/tag/pretrained-weights
+
+
 FEATURE_EXTRACTORS = {
     "ctranspath": CTransPath,
     "retccl": RetCCL,
@@ -71,6 +83,26 @@ FEATURE_EXTRACTORS = {
     "swin": SwinTransformer,
     "owkin": Owkin,
     "vit": ViT,
+    "bt": partial(lunit_resnet50, pretrained=True, progress=True, key="BT"),
+    "mocov2": partial(lunit_resnet50, pretrained=True, progress=True, key="MoCoV2"),
+    "swav": partial(lunit_resnet50, pretrained=True, progress=True, key="SwAV"),
+    "dino_p16": partial(lunit_vit_small, pretrained=True, progress=True, key="DINO_p16"),
+    "dino_p8": partial(lunit_vit_small, pretrained=True, progress=True, key="DINO_p8"),
+}
+
+
+FEATURE_EXTRACTORS_NORM = {
+    "ctranspath": _imagenet_norm,
+    "retccl": _imagenet_norm,
+    "resnet50": _imagenet_norm,
+    "swin": _imagenet_norm,
+    "owkin": _imagenet_norm,
+    "vit": _imagenet_norm,
+    "bt": _lunit_norm,
+    "mocov2": _lunit_norm,
+    "swav": _lunit_norm,
+    "dino_p16": _lunit_norm,
+    "dino_p8": _lunit_norm,
 }
 
 

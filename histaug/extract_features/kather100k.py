@@ -8,7 +8,7 @@ from loguru import logger
 
 from ..data import Kather100k
 from ..augmentations import load_augmentations, Augmentations
-from ..feature_extractors import load_feature_extractor, FEATURE_EXTRACTORS
+from ..feature_extractors import load_feature_extractor, FEATURE_EXTRACTORS, FEATURE_EXTRACTORS_NORM
 from ..utils import save_features
 from .augmented_feature_extractor import AugmentedFeatureExtractor
 
@@ -69,7 +69,9 @@ if __name__ == "__main__":
     output_folder = args.output / f"{args.model}.zarr"
     output_folder.mkdir(parents=True, exist_ok=True)
 
-    ds = Kather100k(args.dataset)
+    norm = FEATURE_EXTRACTORS_NORM[args.model]
+
+    ds = Kather100k(args.dataset, mean=norm.mean, std=norm.std)
     logger.info(f"Loaded dataset with {len(ds)} samples and {len(ds.classes)} classes")
 
     loader = DataLoader(

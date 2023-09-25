@@ -19,3 +19,4 @@ kornia
 umap-learn
 zarr
 pytest
+timm
