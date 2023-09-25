@@ -1,6 +1,6 @@
 from torch.utils.data import Dataset
 from pathlib import Path
-from typing import Union, Optional, Sequence, Mapping
+from typing import Union, Optional, Sequence, Mapping, Any
 import torch
 import zarr
 import numpy as np
@@ -83,6 +83,27 @@ class FeatureDataset(Dataset):
     def __len__(self):
         return len(self.slides)
 
+    def collate_fn(self, batch):
+        """Collate a batch of features into a single tensor"""
+        feats, coords, labels, augmentations, indices, slide_names = zip(*batch)
+        n_max = max(f.shape[0] for f in feats)
+        feats = np.stack([pad(f, n_max, axis=0) for f in feats])
+        coords = np.stack([pad(c, n_max, axis=0) for c in coords])
+        augmentations = np.stack([pad(a, n_max, axis=0) for a in augmentations])
+        indices = np.stack(
+            [pad(i, n_max, axis=0, fill_value=-1) for i in indices]
+        )  # NOTE: -1 means that the instance was padded
+        slide_names = np.array(slide_names)
+        labels = {label: torch.stack([l[label] for l in labels]) for label in labels[0]} if len(labels) > 0 else None
+        return (
+            torch.from_numpy(feats),
+            torch.from_numpy(coords),
+            labels,
+            torch.from_numpy(augmentations),
+            torch.from_numpy(indices),
+            slide_names,
+        )
+
     def dummy_batch(self, batch_size: int):
         """Create a dummy batch of the largest possible size"""
         sample_feats, sample_coords, sample_labels, *_ = self[0]
@@ -94,3 +115,12 @@ class FeatureDataset(Dataset):
         indices = np.expand_dims(torch.arange(self.instances_per_bag), axis=0).repeat(batch_size, axis=0)
         augmentations = np.zeros((batch_size, instances_per_bag), dtype=int)
         return tile_tokens, tile_positions, labels, augmentations, indices, "sample"
+
+
+def pad(x: np.ndarray, size: int, axis: int, fill_value: Any = 0):
+    """Pad an array with zeros to a given size along a given axis"""
+    if x.shape[axis] >= size:
+        return x
+    pad_width = [(0, 0)] * len(x.shape)
+    pad_width[axis] = (0, size - x.shape[axis])
+    return np.pad(x, pad_width=pad_width, mode="constant", constant_values=fill_value)

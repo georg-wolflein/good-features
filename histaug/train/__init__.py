@@ -16,6 +16,7 @@ import hydra
 from hydra.core.global_hydra import GlobalHydra
 import os
 from textwrap import indent
+from loguru import logger
 
 os.environ["HYDRA_FULL_ERROR"] = "1"
 
@@ -49,7 +50,6 @@ class LitMilTransformer(pl.LightningModule):
         self.save_hyperparameters(cfg)
 
         self.model: nn.Module = hydra.utils.instantiate(cfg.model)
-        self.learning_rate = cfg.learning_rate
         self.targets = cfg.dataset.targets
         self.cfg = cfg
 
@@ -134,11 +134,8 @@ class LitMilTransformer(pl.LightningModule):
         return self.step(batch, step_name="test")
 
     def predict_step(self, batch, batch_idx, dataloader_idx=0):
-        if len(batch) == 2:
-            feats, positions = batch
-        else:
-            feats, positions, _ = batch
-        logits = self(feats, positions)
+        feats, coords, *_ = batch
+        logits = self(feats, coords)
 
         softmaxed = {
             target_label: (torch.softmax(x, -1) if self.cfg[target_label].type == "categorical" else x)
@@ -147,11 +144,18 @@ class LitMilTransformer(pl.LightningModule):
         return softmaxed
 
     def configure_optimizers(self):
-        # optimizer = torch.optim.AdamW(self.parameters(), lr=self.learning_rate)
-        optimizer = torch.optim.AdamW(self.parameters(), lr=self.learning_rate)
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=30)
-        return [optimizer], [scheduler]
-        # return optimizer
+        optimizer = hydra.utils.instantiate(self.cfg.optimizer, params=self.parameters())
+        scheduler = hydra.utils.instantiate(self.cfg.scheduler, optimizer=optimizer) if self.cfg.scheduler else None
+        return optimizer if scheduler is None else ([optimizer], [scheduler])
+
+    @property
+    def learning_rate(self):
+        return self.optimizers().param_groups[0]["lr"]
+
+    @learning_rate.setter
+    def learning_rate(self, value):
+        for param_group in self.optimizers().param_groups:
+            param_group["lr"] = value
 
     def forward(self, *args):
         return self.model(*args)
@@ -241,6 +245,11 @@ def train(
 
     print(model)
 
+    if cfg.tune_lr:
+        tuner = pl.tuner.tuning.Tuner(trainer)
+        tuner.lr_find(model=model, train_dataloaders=train_dl, val_dataloaders=valid_dl)
+        logger.info(f"Best learning rate: {model.learning_rate}")
+
     trainer.fit(model=model, train_dataloaders=train_dl, val_dataloaders=valid_dl)
 
     torch.save(model_checkpoint_callback.state_dict(), out_dir / "checkpoints.pth")
@@ -305,6 +314,7 @@ def app(cfg: DictConfig) -> None:
         targets=train_targets,
         instances_per_bag=cfg.dataset.instances_per_bag,
         pad=cfg.dataset.pad,
+        augmentations=cfg.dataset.augmentations,
     )
 
     train_dl = DataLoader(
@@ -313,6 +323,7 @@ def app(cfg: DictConfig) -> None:
         num_workers=cfg.dataset.num_workers,
         shuffle=True,
         pin_memory=True,
+        collate_fn=train_ds.collate_fn,
     )
 
     valid_ds = FeatureDataset(
@@ -320,12 +331,14 @@ def app(cfg: DictConfig) -> None:
         targets=valid_targets,
         instances_per_bag=cfg.dataset.instances_per_bag,
         pad=cfg.dataset.pad,
+        augmentations=[None],
     )
     valid_dl = DataLoader(
         valid_ds,
         batch_size=cfg.dataset.batch_size,
         num_workers=cfg.dataset.num_workers,
         pin_memory=True,
+        collate_fn=valid_ds.collate_fn,
     )
 
     model, trainer, out_dir, wandb_logger = train(cfg, train_dl, valid_dl)

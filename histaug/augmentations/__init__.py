@@ -124,7 +124,7 @@ _unloaded_augmentations: Mapping[str, Callable[[], Any]] = {
     "sharpen": lambda: T.RandomAdjustSharpness(p=1.0, sharpness_factor=5.0),
     "gaussian blur": lambda: T.GaussianBlur(kernel_size=5, sigma=2.0),
     "median blur": lambda: K.RandomMedianBlur(p=1.0, kernel_size=5, same_on_batch=True),
-    "gaussian noise": lambda: T.Lambda(lambda x: x + torch.randn_like(x) * 0.1),
+    # "gaussian noise": lambda: T.Lambda(lambda x: x + torch.randn_like(x) * 0.1),
 }
 
 
