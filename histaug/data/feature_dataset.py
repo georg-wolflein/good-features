@@ -38,9 +38,7 @@ class FeatureDataset(Dataset):
         self.instances_per_bag = instances_per_bag
         self.pad = pad
         self.augmentations = augmentations
-        self.slides = sorted(
-            (sorted((Path(b) for b in bag), key=lambda b: b.stem) for bag in bags), key=lambda b: b[0].stem
-        )
+        self.slides = list(sorted(Path(b) for b in bag) for bag in bags)
         self.targets = targets
 
     def __getitem__(self, index):
@@ -101,8 +99,8 @@ class FeatureDataset(Dataset):
         labels = {label: torch.stack([l[label] for l in labels]) for label in labels[0]} if len(labels) > 0 else None
         mask = torch.arange(n_max) < torch.tensor(n_per_instance).unsqueeze(-1)
         return (
-            torch.from_numpy(feats),
-            torch.from_numpy(coords),
+            torch.from_numpy(feats).float(),
+            torch.from_numpy(coords).int(),
             mask,
             labels,
             torch.tensor(indices, dtype=torch.long),

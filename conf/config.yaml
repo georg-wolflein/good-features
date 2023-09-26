@@ -1,6 +1,6 @@
 defaults:
   - _self_
-  - dataset@dataset: tcga_brca_subtypes
+  - dataset@dataset: camelyon16_train
   - augmentations@dataset.augmentations: none
 
 settings:
@@ -13,23 +13,24 @@ output_dir: /data/histaug/results/train/${dataset.name}
 seed: 0 # leave empty to use random seed
 dataset: # some more options will be added by the dataset config in conf/dataset
   augmentations: # will be overwritten by augmentations from conf/augmentations
-  batch_size: 32
-  instances_per_bag: 4096
+  batch_size: 1
+  instances_per_bag: 8192
   num_workers: 32
-accumulate_grad_samples: #8
+accumulate_grad_samples: 8
 model:
   # _target_: histaug.train.models.MeanAveragePooling
   _target_: histaug.train.models.AttentionMIL
-  d_features: 768
-  hidden_dim: 512
+  d_features: ${settings.feature_dim}
+  hidden_dim: 256
   targets: ${dataset.targets}
-  batchnorm: true
+  batchnorm: false
 deploy:
   checkpoint: #/mnt/bulk/gwoelflein/georg-transformers/output/mq1jcaq8/lightning_logs/version_0/checkpoints/last.ckpt
 tune_lr: false
 optimizer:
   _target_: torch.optim.AdamW
-  lr: 3e-4
+  lr: 1e-3
+  weight_decay: 1.
 scheduler:
   # _target_: torch.optim.lr_scheduler.CosineAnnealingLR
   # T_max: ${max_epochs}
@@ -40,5 +41,5 @@ early_stopping:
   enabled: false
 restore_best_checkpoint: true
 max_epochs: 50
-grad_clip: .5
+grad_clip: #.5
 device: # leave empty to use 1 GPU

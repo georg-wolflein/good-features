@@ -5,10 +5,11 @@ from tqdm import tqdm
 from pathlib import Path
 from loguru import logger
 import shutil
+from collections import defaultdict
 
 from ..data import SlidesDataset
 from ..augmentations import load_augmentations, Augmentations
-from ..feature_extractors import load_feature_extractor, FEATURE_EXTRACTORS, FEATURE_EXTRACTORS_NORM
+from ..feature_extractors import load_feature_extractor, FEATURE_EXTRACTORS
 from ..utils import save_features, check_version
 from .augmented_feature_extractor import AugmentedFeatureExtractor
 
@@ -34,7 +35,7 @@ def process_dataset(
         shutil.rmtree(output_file, ignore_errors=True)
 
         all_feats = []
-        all_feats_augs = {aug_name: [] for aug_name in augmentations}
+        all_feats_augs = defaultdict(list)
 
         loader = DataLoader(
             slide, batch_size=None, shuffle=False, num_workers=num_workers, pin_memory=True
@@ -85,15 +86,11 @@ if __name__ == "__main__":
     output_folder = args.output / args.model
     output_folder.mkdir(parents=True, exist_ok=True)
 
-    norm = FEATURE_EXTRACTORS_NORM[args.model]
-
     ds = SlidesDataset(
         args.dataset,
         batch_size=args.batch_size,
         start=args.start,
         end=args.end,
-        mean=norm.mean,
-        std=norm.std,
     )  # dataset already loads patches in batches
 
     logger.info(f"Loaded dataset with {len(ds)} slides, will process in batches of {args.batch_size} patches")

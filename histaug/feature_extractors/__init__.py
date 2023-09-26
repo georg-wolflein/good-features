@@ -1,25 +1,19 @@
 from torchvision.models import resnet50, ResNet50_Weights, swin_t, Swin_T_Weights, vit_b_16, ViT_B_16_Weights
 from torch import nn
 import torch
-from functools import partial
 from torchvision import transforms as T
-from collections import namedtuple
+from typing import Callable
 
 from .ctranspath import CTransPath
 from .retccl import RetCCL
 from .owkin import Owkin
 from .lunit import resnet50 as lunit_resnet50, vit_small as lunit_vit_small
-from ..utils.images import IMAGENET_MEAN, IMAGENET_STD
+from ..utils.images import IMAGENET_MEAN, IMAGENET_STD, LUNIT_MEAN, LUNIT_STD
 
 __all__ = [
-    "CTransPath",
-    "RetCCL",
-    "SwinTransformer",
-    "ResNet50",
-    "Owkin",
     "load_feature_extractor",
     "FEATURE_EXTRACTORS",
-    "FEATURE_EXTRACTORS_NORM",
+    "FeatureExtractor",
 ]
 
 
@@ -70,44 +64,47 @@ class ViT(nn.Module):
         return feats
 
 
-_imagenet_norm = namedtuple("norm", ["mean", "std"])(mean=IMAGENET_MEAN, std=IMAGENET_STD)
-_lunit_norm = namedtuple("norm", ["mean", "std"])(
-    mean=(0.70322989, 0.53606487, 0.66096631), std=(0.21716536, 0.26081574, 0.20723464)
-)  # https://github.com/lunit-io/benchmark-ssl-pathology/releases/tag/pretrained-weights
+class FeatureExtractor(nn.Module):
+    def __init__(self, model: nn.Module, transform: Callable[[torch.Tensor], torch.Tensor]):
+        super().__init__()
+        model.eval()
+        self.model = model
+        self.transform = transform
 
+    def forward(self, x):
+        return self.model(self.transform(x))
+
+
+_imagenet_transform = T.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD)
+_lunit_transform = T.Normalize(mean=LUNIT_MEAN, std=LUNIT_STD)
 
 FEATURE_EXTRACTORS = {
-    "ctranspath": CTransPath,
-    "retccl": RetCCL,
-    "resnet50": ResNet50,
-    "swin": SwinTransformer,
-    "owkin": Owkin,
-    "vit": ViT,
-    "bt": partial(lunit_resnet50, pretrained=True, progress=True, key="BT"),
-    "mocov2": partial(lunit_resnet50, pretrained=True, progress=True, key="MoCoV2"),
-    "swav": partial(lunit_resnet50, pretrained=True, progress=True, key="SwAV"),
-    "dino_p16": partial(lunit_vit_small, pretrained=True, progress=True, key="DINO_p16"),
-    "dino_p8": partial(lunit_vit_small, pretrained=True, progress=True, key="DINO_p8"),
+    "ctranspath": lambda: FeatureExtractor(CTransPath(), transform=_imagenet_transform),
+    "retccl": lambda: FeatureExtractor(RetCCL(), transform=_imagenet_transform),
+    "resnet50": lambda: FeatureExtractor(ResNet50(), transform=_imagenet_transform),
+    "swin": lambda: FeatureExtractor(SwinTransformer(), transform=_imagenet_transform),
+    "owkin": lambda: FeatureExtractor(Owkin(), transform=_imagenet_transform),
+    "vit": lambda: FeatureExtractor(ViT(), transform=_imagenet_transform),
+    "bt": lambda: FeatureExtractor(
+        lunit_resnet50(key="BT", pretrained=True, progress=True), transform=_lunit_transform
+    ),
+    "mocov2": lambda: FeatureExtractor(
+        lunit_resnet50(key="MoCoV2", pretrained=True, progress=True), transform=_lunit_transform
+    ),
+    "swav": lambda: FeatureExtractor(
+        lunit_resnet50(key="SwAV", pretrained=True, progress=True), transform=_lunit_transform
+    ),
+    "dino_p16": lambda: FeatureExtractor(
+        lunit_vit_small(key="DINO_p16", pretrained=True, progress=True), transform=_lunit_transform
+    ),
+    "dino_p8": lambda: FeatureExtractor(
+        lunit_vit_small(key="DINO_p8", pretrained=True, progress=True), transform=_lunit_transform
+    ),
 }
 
 
-FEATURE_EXTRACTORS_NORM = {
-    "ctranspath": _imagenet_norm,
-    "retccl": _imagenet_norm,
-    "resnet50": _imagenet_norm,
-    "swin": _imagenet_norm,
-    "owkin": _imagenet_norm,
-    "vit": _imagenet_norm,
-    "bt": _lunit_norm,
-    "mocov2": _lunit_norm,
-    "swav": _lunit_norm,
-    "dino_p16": _lunit_norm,
-    "dino_p8": _lunit_norm,
-}
-
-
-def load_feature_extractor(model_name: str, **kwargs) -> nn.Module:
+def load_feature_extractor(model_name: str) -> nn.Module:
     try:
-        return FEATURE_EXTRACTORS[model_name](**kwargs)
+        return FEATURE_EXTRACTORS[model_name]()
     except KeyError:
         raise ValueError(f"Unknown feature extractor model {model_name}.")

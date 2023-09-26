@@ -1,12 +1,10 @@
 from torch.utils.data import Dataset
 from pathlib import Path
-from typing import Union, Optional, Sequence
+from typing import Union, Optional
 import zarr
 import torch
 import math
 from torchvision import transforms as T
-
-from ..utils.images import UnNormalize
 
 
 class SlideDataset(Dataset):
@@ -31,7 +29,7 @@ class SlideDataset(Dataset):
         end = min(start + self.batch_size, self.num_patches)
         patches = self.zarr_group["patches"][start:end]
         coords = self.zarr_group["coords"][start:end]
-        return self.transform(patches), coords
+        return self.transform(patches), torch.from_numpy(coords)
 
     def __len__(self):
         return self.num_batches
@@ -45,8 +43,6 @@ class SlidesDataset:
     def __init__(
         self,
         root: Union[str, Path],
-        mean: tuple,
-        std: tuple,
         batch_size: Optional[int] = None,
         start: int = 0,
         end: int = None,
@@ -67,15 +63,10 @@ class SlidesDataset:
         end = end or len(slides)
         self.slides = slides[start:end]
         self.batch_size = batch_size
-        self.transform = T.Compose(
-            [
-                T.Lambda(lambda patches: (torch.from_numpy(patches).float() / 255).permute(0, 3, 1, 2)),
-                T.Normalize(mean=mean, std=std),
-            ]
-        )
-        self.inverse_transform = T.Compose(
-            [UnNormalize(mean=mean, std=std), T.Lambda(lambda patches: (patches * 255).permute(0, 2, 3, 1))]
-        )
+        self.transform = T.Lambda(
+            lambda patches: (torch.from_numpy(patches).float() / 255.0).permute(0, 3, 1, 2)
+        )  # we will normalize later (in the feature extractor's forward() method)
+        self.inverse_transform = T.Lambda(lambda patches: (patches * 255).byte().permute(0, 2, 3, 1))
 
     def __getitem__(self, index) -> SlideDataset:
         return SlideDataset(

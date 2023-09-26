@@ -7,8 +7,10 @@ fi
 
 model="$1" # "ctranspath" "swin" "retccl" "resnet50" "owkin" "vit"
 
-dataset="/data/shiprec/camelyon16/training"
-output="/data/histaug/results/camelyon16"
+# dataset="/data/shiprec/camelyon16/training"
+# output="/data/histaug/results/camelyon16"
+dataset="/data/shiprec/TCGA-BRCA-DX"
+output="/data/histaug/results/TCGA-BRCA-DX"
 
 GPUS=("${@:2}")
 CMDS=(
@@ -19,7 +21,7 @@ CMDS=(
 )
 
 # session="extract-$model"
-session="extract-lunit"
+session="extract-brca"
 
 # Check if session exists
 tmux has-session -t $session 2>/dev/null
