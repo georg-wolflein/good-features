@@ -28,6 +28,8 @@ def save_features(
     feats: torch.Tensor,
     feats_augs: Dict[str, torch.Tensor],
     coords: torch.Tensor,
+    *,
+    feats_norm: Optional[torch.Tensor] = None,
     labels: Optional[torch.Tensor] = None,
     files: Optional[List[str]] = None,
     classes: Optional[List[str]] = None,
@@ -48,6 +50,8 @@ def save_features(
     aug_group = f.create_group("feats_augs")
     for aug_name, feats_aug in feats_augs.items():
         aug_group.create_dataset(aug_name, data=ensure_numpy(feats_aug), chunks=(chunk_size, *feats_aug.shape[1:]))
+    if feats_norm is not None:
+        f.create_dataset("feats_norm", data=ensure_numpy(feats_norm), chunks=(chunk_size, *feats_norm.shape[1:]))
 
 
 class LoadedFeatures(NamedTuple):

@@ -11,7 +11,8 @@ class AugmentedFeatureExtractor(nn.Module):
         self.feature_extractor = feature_extractor
         self.augmentations = augmentations
 
-    def forward(self, images) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
-        feats = self.feature_extractor(images)
-        feats_augs = {aug_name: self.feature_extractor(aug(images)) for aug_name, aug in self.augmentations.items()}
-        return feats, feats_augs
+    def forward(self, patches, norm_patches=None) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+        feats = self.feature_extractor(patches)
+        feats_augs = {aug_name: self.feature_extractor(aug(patches)) for aug_name, aug in self.augmentations.items()}
+        feats_norm = self.feature_extractor(norm_patches) if norm_patches is not None else None
+        return feats, feats_augs, feats_norm

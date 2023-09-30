@@ -176,6 +176,7 @@ def train(
     valid_dl: DataLoader,
     crossval_id: Optional[str] = None,
     crossval_fold: Optional[int] = None,
+    augmentation_keys: Optional[Sequence[str]] = (),
 ) -> Tuple[LitMilTransformer, pl.Trainer, Path, WandbLogger]:
     model = LitMilTransformer(cfg)
 
@@ -200,6 +201,7 @@ def train(
         if crossval_id == "":
             crossval_id = wandb_logger.version
         wandb_logger.experiment.config.update({"crossval_id": crossval_id, "crossval_fold": crossval_fold})
+    wandb_logger.experiment.tags.extend(augmentation_keys)
 
     out_dir = Path(cfg.output_dir) / (wandb_logger.version or "")
     if crossval_id is not None:
@@ -313,7 +315,7 @@ def app(cfg: DictConfig) -> None:
         bags=train_df.path.values,
         targets=train_targets,
         instances_per_bag=cfg.dataset.instances_per_bag,
-        augmentations=cfg.dataset.augmentations,
+        augmentations=cfg.dataset.augmentations.train,
     )
 
     train_dl = DataLoader(
@@ -329,7 +331,7 @@ def app(cfg: DictConfig) -> None:
         bags=valid_df.path.values,
         targets=valid_targets,
         instances_per_bag=cfg.dataset.instances_per_bag,
-        augmentations=[None],
+        augmentations=cfg.dataset.augmentations.val,
     )
     valid_dl = DataLoader(
         valid_ds,

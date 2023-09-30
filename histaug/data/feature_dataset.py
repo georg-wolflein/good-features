@@ -5,9 +5,11 @@ import torch
 import zarr
 import numpy as np
 from loguru import logger
-import itertools
 
 from ..augmentations import augmentation_names
+
+ORIGINAL_FEATURES = "ORIGINAL"
+NORMALIZED_FEATURES = "NORMALIZED"
 
 
 class FeatureDataset(Dataset):
@@ -16,7 +18,7 @@ class FeatureDataset(Dataset):
         bags: Sequence[Union[str, Path]],
         targets: Optional[Mapping[str, torch.Tensor]],
         instances_per_bag: Optional[int] = None,
-        augmentations: Sequence[str] = (None, *augmentation_names()),
+        augmentations: Sequence[str] = (ORIGINAL_FEATURES, *augmentation_names()),
     ):
         """This dataset yields feature vectors for one slide at a time.
 
@@ -26,9 +28,9 @@ class FeatureDataset(Dataset):
             augmentations (Sequence[str], optional): Augmentations to apply. Be sure to include None as an augmentation; this is the original feature vector with no augmentation applied.
         """
 
-        if None not in augmentations:
+        if ORIGINAL_FEATURES not in augmentations:
             logger.warning(
-                "Loading feature dataset without None augmentation means that there is a 0% chance of selecting the original feature vector."
+                f"Loading feature dataset without {ORIGINAL_FEATURES!r} augmentation means that there is a 0% chance of selecting the original feature vector."
             )
 
         assert (
@@ -40,6 +42,15 @@ class FeatureDataset(Dataset):
         self.augmentations = augmentations
         self.slides = list(sorted(Path(b) for b in bag) for bag in bags)
         self.targets = targets
+
+    @staticmethod
+    def _group_name_for_aug(aug) -> str:
+        if aug == ORIGINAL_FEATURES:
+            return "feats"
+        elif aug == NORMALIZED_FEATURES:
+            return "feats_norm"
+        else:
+            return f"feats_augs/{aug}"
 
     def __getitem__(self, index):
         slides = self.slides[index]  # we may have multiple slides per patient
@@ -69,9 +80,7 @@ class FeatureDataset(Dataset):
             slide_indices = indices[indices[:, 0] == slide_index]
             for augmentation_index, augmentation in enumerate(self.augmentations):
                 augmentation_indices = slide_indices[slide_indices[:, 2] == augmentation_index]
-                feats.append(
-                    f["feats" if augmentation is None else f"feats_augs/{augmentation}"][augmentation_indices[:, 1]]
-                )
+                feats.append(f[self._group_name_for_aug(augmentation)][augmentation_indices[:, 1]])
                 coords.append(f["coords"][augmentation_indices[:, 1]])
 
         feats = np.concatenate(feats)

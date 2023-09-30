@@ -27,9 +27,14 @@ class SlideDataset(Dataset):
     def __getitem__(self, index):
         start = index * self.batch_size
         end = min(start + self.batch_size, self.num_patches)
-        patches = self.zarr_group["patches"][start:end]
         coords = self.zarr_group["coords"][start:end]
-        return self.transform(patches), torch.from_numpy(coords)
+        patches = self.zarr_group["patches"][start:end]
+        patches = self.transform(patches)
+        norm_patches = (
+            self.zarr_group["normalized_patches"][start:end] if "normalized_patches" in self.zarr_group else None
+        )
+        norm_patches = self.transform(norm_patches) if norm_patches is not None else None
+        return patches, torch.from_numpy(coords), norm_patches
 
     def __len__(self):
         return self.num_batches

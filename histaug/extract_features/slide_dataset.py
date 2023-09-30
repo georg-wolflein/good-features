@@ -36,22 +36,28 @@ def process_dataset(
 
         all_feats = []
         all_feats_augs = defaultdict(list)
+        all_feats_norm = []
 
         loader = DataLoader(
             slide, batch_size=None, shuffle=False, num_workers=num_workers, pin_memory=True
         )  # shuffle must be False to keep patches in order (so that we save them in order, as they are saved per slide)
 
-        for patches, coords in tqdm(loader, desc=f"Processing patches in {slide.name}", position=1, leave=False):
+        for patches, coords, norm_patches in tqdm(
+            loader, desc=f"Processing patches in {slide.name}", position=1, leave=False
+        ):
             imgs = patches.to(device)
-            feats, feats_augs = augmented_feature_extractor(imgs)
+            norm_imgs = norm_patches.to(device) if norm_patches is not None else None
+            feats, feats_augs, feats_norm = augmented_feature_extractor(patches=imgs, norm_patches=norm_imgs)
 
             all_feats.append(feats.detach().cpu())
+            all_feats_norm.append(feats_norm.detach().cpu() if feats_norm is not None else None)
             for aug_name, feats_aug in feats_augs.items():
                 all_feats_augs[aug_name].append(feats_aug.detach().cpu())
 
         feats = torch.cat(all_feats)
         feats_augs = {aug_name: torch.cat(feats_augs) for aug_name, feats_augs in all_feats_augs.items()}
-        save_features(output_file, feats, feats_augs, slide.coords)
+        feats_norm = None if any(f is None for f in all_feats_norm) else torch.cat(all_feats_norm)
+        save_features(output_file, feats, feats_augs, slide.coords, feats_norm=feats_norm)
 
 
 if __name__ == "__main__":
@@ -81,6 +87,7 @@ if __name__ == "__main__":
     parser.add_argument("--device", type=str, default="cuda", help="Device to use for feature extraction")
     parser.add_argument("--start", type=int, default=0, help="Index of the first slide to process")
     parser.add_argument("--end", type=int, default=None, help="Index of the last slide to process")
+    parser.add_argument("--no-augs", action="store_true", help="Disable augmentations")
     args = parser.parse_args()
 
     output_folder = args.output / args.model
@@ -96,7 +103,7 @@ if __name__ == "__main__":
     logger.info(f"Loaded dataset with {len(ds)} slides, will process in batches of {args.batch_size} patches")
 
     model = load_feature_extractor(args.model)
-    augmentations = load_augmentations()
+    augmentations = Augmentations() if args.no_augs else load_augmentations()
 
     logger.info(f"Processing dataset, saving features to {output_folder}")
     process_dataset(ds, model, augmentations, output_folder, device=args.device, num_workers=8)

@@ -1,9 +1,8 @@
 name: camelyon16_train
 clini_tables: ["/metadata/camelyon16_train_clini.csv"]
 slide_tables: ["/metadata/camelyon16_train_slide.csv"]
-# feature_dirs: ["/data/histaug/results/camelyon16/${settings.feature_extractor}"]
-feature_dirs: ["/data/histaug/results/camelyon16_noaug/${settings.feature_extractor}"]
-# feature_dirs: ["/data/histaug/results/camelyon16_e2e/${settings.feature_extractor}"]
+feature_dirs: ["/data/histaug/results/camelyon16/${settings.feature_extractor}"]
+fold_table: "/metadata/camelyon16_train_folds.csv"
 filename_col: FILENAME
 patient_col: PATIENT
 targets:

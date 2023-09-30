@@ -25,7 +25,7 @@ def process_dataset(loader, model: nn.Module, augmentations: Augmentations, devi
 
     for imgs, labels, files in tqdm(itertools.islice(loader, n_batches), desc="Processing dataset", total=n_batches):
         imgs = imgs.to(device)
-        feats, feats_augs = augmented_feature_extractor(imgs)
+        feats, feats_augs, *_ = augmented_feature_extractor(imgs)
 
         all_labels.append(labels.detach().cpu())
         all_feats.append(feats.detach().cpu())
@@ -45,7 +45,9 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Extract features and augmented features from a dataset")
-    parser.add_argument("--dataset", type=Path, default="/data/NCT-CRC-HE-100K", help="Path to the Kather100k dataset")
+    parser.add_argument(
+        "--dataset", type=Path, default="/data/NCT-CRC-HE-100K-NONORM", help="Path to the Kather100k dataset"
+    )
     parser.add_argument(
         "--output", type=Path, default="/data/histaug/results/kather100k", help="Path to the output folder"
     )

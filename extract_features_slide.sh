@@ -7,14 +7,14 @@ fi
 
 model="$1" # "ctranspath" "swin" "retccl" "resnet50" "owkin" "vit"
 
-# dataset="/data/shiprec/camelyon16/training"
-# output="/data/histaug/results/camelyon16"
-dataset="/data/shiprec/TCGA-BRCA-DX"
-output="/data/histaug/results/TCGA-BRCA-DX"
+dataset="/data/shiprec/camelyon16/training"
+output="/data/histaug/results/camelyon16_tmp"
+# dataset="/data/shiprec/TCGA-BRCA-DX"
+# output="/data/histaug/results/TCGA-BRCA-DX"
 
 GPUS=("${@:2}")
 CMDS=(
-    "env/bin/python -m histaug.extract_features.slide_dataset --dataset $dataset --output $output --model $model"
+    "env/bin/python -m histaug.extract_features.slide_dataset --dataset $dataset --output $output --model $model --no-augs"
     # "env/bin/python -m histaug.extract_features.slide_dataset --dataset $dataset --output $output --model $model --start 0 --end 400"
     # "env/bin/python -m histaug.extract_features.slide_dataset --dataset $dataset --output $output --model $model --start 400 --end 800"
     # "env/bin/python -m histaug.extract_features.slide_dataset --dataset $dataset --output $output --model $model --start 800"
