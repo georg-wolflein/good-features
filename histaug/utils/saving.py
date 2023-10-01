@@ -63,17 +63,21 @@ class LoadedFeatures(NamedTuple):
 
 
 def load_features(
-    path: Path, remove_classes: Sequence[str] = (), augmentations: Optional[Sequence[str]] = None
+    path: Path,
+    remove_classes: Sequence[str] = (),
+    augmentations: Optional[Sequence[str]] = None,
+    n: Optional[int] = None,
 ) -> LoadedFeatures:
+    n = n or -1
     f = zarr.open_group(str(path), mode="r")
     classes = np.array(f.attrs["classes"]) if "classes" in f.attrs else None
 
-    feats = f["feats"][:]
-    labels = classes[f["labels"][:]] if classes is not None and "labels" in f else None
-    files = f["files"][:] if "files" in f else None
-    coords = f["coords"][:] if "coords" in f else None
+    feats = f["feats"][:n]
+    labels = classes[f["labels"][:n]] if classes is not None and "labels" in f else None
+    files = f["files"][:n] if "files" in f else None
+    coords = f["coords"][:n] if "coords" in f else None
 
-    feats_augs = {k: v[:] for k, v in f["feats_augs"].items() if augmentations is None or k in augmentations}
+    feats_augs = {k: v[:n] for k, v in f["feats_augs"].items() if augmentations is None or k in augmentations}
 
     # Remove classes
     if len(remove_classes) > 0:

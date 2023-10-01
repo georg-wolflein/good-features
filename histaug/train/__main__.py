@@ -1,3 +1,3 @@
-from . import app
+from . import train_nocrossval
 
-app()
+train_nocrossval()

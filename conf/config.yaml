@@ -7,7 +7,7 @@ settings:
   feature_dim: 768
   feature_extractor: ctranspath
 
-name: train-${dataset.name}-${model_name:${model._target_}}-${settings.feature_extractor}
+name: ${dataset.name}-${model_name:${model._target_}}-${settings.feature_extractor}
 project: histaug
 output_dir: /data/histaug/results/train/${dataset.name}
 seed: 0 # leave empty to use random seed
@@ -40,6 +40,6 @@ early_stopping:
   patience: 10
   enabled: false
 restore_best_checkpoint: true
-max_epochs: 50
+max_epochs: 30
 grad_clip: #.5
 device: # leave empty to use 1 GPU

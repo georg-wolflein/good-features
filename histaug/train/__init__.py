@@ -1,22 +1,20 @@
 from pathlib import Path
-from typing import Iterable, Mapping, Sequence, Tuple, Any, Optional, Callable
+from typing import Sequence, Tuple, Optional
 import sys
 import pandas as pd
 import pytorch_lightning as pl
 import torch
-from torch import nn, Tensor
+from torch import nn
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint, Callback, TQDMProgressBar
 from pytorch_lightning.loggers import CSVLogger
 from pytorch_lightning.loggers.wandb import WandbLogger
-from torch.nn import functional as F
-from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
-from omegaconf import DictConfig, ListConfig, OmegaConf
+from omegaconf import DictConfig, OmegaConf
 import hydra
-from hydra.core.global_hydra import GlobalHydra
 import os
 from textwrap import indent
 from loguru import logger
+import numpy as np
 
 os.environ["HYDRA_FULL_ERROR"] = "1"
 
@@ -33,6 +31,7 @@ from .metrics import create_metrics_for_target
 from .utils import summarize_dataset
 import histaug
 
+# from hydra.core.global_hydra import GlobalHydra
 # GlobalHydra().clear()
 # hydra.initialize(config_path="conf")
 # cfg = hydra.compose(
@@ -132,7 +131,7 @@ class LitMilTransformer(pl.LightningModule):
         return self.step(batch, step_name="test")
 
     def predict_step(self, batch, batch_idx, dataloader_idx=0):
-        feats, coords, mask = batch
+        feats, coords, mask, *_ = batch
         logits = self(feats, coords, mask)
 
         softmaxed = {
@@ -177,13 +176,15 @@ def train(
     crossval_id: Optional[str] = None,
     crossval_fold: Optional[int] = None,
     augmentation_keys: Optional[Sequence[str]] = (),
+    run_prefix: str = "",
 ) -> Tuple[LitMilTransformer, pl.Trainer, Path, WandbLogger]:
     model = LitMilTransformer(cfg)
 
-    name = cfg.name if crossval_fold is None else f"{cfg.name}_fold{crossval_fold}"
+    name = cfg.name if crossval_fold is None else f"{cfg.name}-fold{crossval_fold}"
+    name = name if run_prefix == "" else f"{run_prefix}-{name}"
 
     wandb_logger = WandbLogger(
-        name or cfg.name,
+        name,
         project=cfg.project,
         job_type="cv" if crossval_id is not None else "train",
     )
@@ -201,7 +202,7 @@ def train(
         if crossval_id == "":
             crossval_id = wandb_logger.version
         wandb_logger.experiment.config.update({"crossval_id": crossval_id, "crossval_fold": crossval_fold})
-    wandb_logger.experiment.tags.extend(augmentation_keys)
+    wandb_logger.experiment.tags = (*wandb_logger.experiment.tags, *augmentation_keys)
 
     out_dir = Path(cfg.output_dir) / (wandb_logger.version or "")
     if crossval_id is not None:
@@ -286,15 +287,40 @@ def load_dataset_df(cfg: DictConfig):
     return dataset_df
 
 
-@hydra.main(config_path=str(Path(histaug.__file__).parent.with_name("conf")), config_name="config", version_base="1.3")
-def app(cfg: DictConfig) -> None:
-    pl.seed_everything(cfg.seed)
-    torch.set_float32_matmul_precision("medium")
+def get_folds(cfg: DictConfig, dataset_df: pd.DataFrame) -> pd.Series:
+    folds_file = Path(cfg.dataset.folds_table)
+    if not folds_file.exists():
+        n_folds = 5
+        patients = dataset_df.index.unique()
+        n_patients = len(patients)
+        logger.info(f"Folds table {folds_file} missing, so creating {n_folds} folds for {n_patients} patients")
+        folds = np.arange(n_patients) % n_folds
+        np.random.shuffle(folds)
+        folds_df = pd.DataFrame({cfg.dataset.patient_col: patients, "fold": folds}).set_index(cfg.dataset.patient_col)
+        folds_df.to_csv(folds_file)
 
-    dataset_df = load_dataset_df(cfg)
+    folds_df = pd.read_csv(folds_file).set_index(cfg.dataset.patient_col)
 
-    # Split validation set off main dataset
-    train_items, valid_items = train_test_split(dataset_df.index, test_size=0.2)
+    # Ensure folds_df contains only patients in dataset_df; remove extra patients
+    folds_df = folds_df.loc[folds_df.index.isin(dataset_df.index.unique())]
+
+    return folds_df.fold
+
+
+def train_fold(
+    cfg: DictConfig,
+    dataset_df: pd.DataFrame,
+    folds: pd.Series,
+    crossval_id: Optional[str] = None,
+    crossval_fold: Optional[int] = None,
+    run_prefix: str = "",
+):
+    logger.info(
+        f"Using fold {crossval_fold} for validation, contains {(folds == crossval_fold).mean()*100:.1f}% of patients"
+    )
+
+    valid_mask = folds == (crossval_fold if crossval_fold is not None else -1)
+    train_items, valid_items = folds.index[~valid_mask], folds.index[valid_mask]
     train_df, valid_df = dataset_df.loc[train_items], dataset_df.loc[valid_items]
 
     print("Train dataset:")
@@ -341,7 +367,9 @@ def app(cfg: DictConfig) -> None:
         collate_fn=valid_ds.collate_fn,
     )
 
-    model, trainer, out_dir, wandb_logger = train(cfg, train_dl, valid_dl)
+    model, trainer, out_dir, wandb_logger = train(
+        cfg, train_dl, valid_dl, crossval_fold=crossval_fold, crossval_id=crossval_id, run_prefix=run_prefix
+    )
 
     predictions = flatten_batched_dicts(trainer.predict(model=model, dataloaders=valid_dl, return_predictions=True))
 
@@ -351,3 +379,43 @@ def app(cfg: DictConfig) -> None:
         categories={target.column: target.classes for target in cfg.dataset.targets},
     )
     preds_df.to_csv(out_dir / "valid-patient-preds.csv")
+
+    wandb_logger.experiment.finish()
+
+    return model, trainer, out_dir, wandb_logger
+
+
+def setup(func):
+    def wrapper(cfg: DictConfig):
+        pl.seed_everything(cfg.seed)
+        torch.set_float32_matmul_precision("medium")
+
+        dataset_df = load_dataset_df(cfg)
+        folds = get_folds(cfg, dataset_df)
+        return func(cfg, dataset_df=dataset_df, folds=folds)
+
+    return wrapper
+
+
+@hydra.main(config_path=str(Path(histaug.__file__).parent.with_name("conf")), config_name="config", version_base="1.3")
+@setup
+def train_crossval(cfg: DictConfig, dataset_df: pd.DataFrame, folds: pd.Series) -> None:
+    crossval_id = None
+    for fold in sorted(folds.unique()):
+        model, trainer, out_dir, wandb_logger = train_fold(
+            cfg, dataset_df, folds, crossval_id=cfg.name, crossval_fold=fold, run_prefix="crossval"
+        )
+        if crossval_id is None:
+            crossval_id = wandb_logger.experiment.config["crossval_id"]
+
+
+@hydra.main(config_path=str(Path(histaug.__file__).parent.with_name("conf")), config_name="config", version_base="1.3")
+@setup
+def train_nocrossval(cfg: DictConfig, dataset_df: pd.DataFrame, folds: pd.Series) -> None:
+    train_fold(cfg, dataset_df, folds, crossval_id=None, crossval_fold=None, run_prefix="train")
+
+
+@hydra.main(config_path=str(Path(histaug.__file__).parent.with_name("conf")), config_name="config", version_base="1.3")
+@setup
+def train_oneval(cfg: DictConfig, dataset_df: pd.DataFrame, folds: pd.Series) -> None:
+    train_fold(cfg, dataset_df, folds, crossval_id=None, crossval_fold=0, run_prefix="train")
