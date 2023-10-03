@@ -46,7 +46,10 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Extract features and augmented features from a dataset")
     parser.add_argument(
-        "--dataset", type=Path, default="/data/NCT-CRC-HE-100K-NONORM", help="Path to the Kather100k dataset"
+        "--cache", type=Path, default="/data/cache/huggingface", help="Path to the huggingface cache folder"
+    )
+    parser.add_argument(
+        "--split", type=str, choices=["train_nonorm", "train", "validate"], default="train_nonorm", help="Dataset split"
     )
     parser.add_argument(
         "--output", type=Path, default="/data/histaug/results/kather100k", help="Path to the output folder"
@@ -71,7 +74,7 @@ if __name__ == "__main__":
     output_folder = args.output / f"{args.model}.zarr"
     output_folder.mkdir(parents=True, exist_ok=True)
 
-    ds = Kather100k(args.dataset)
+    ds = Kather100k(cache_dir=args.cache, split=args.split)
     logger.info(f"Loaded dataset with {len(ds)} samples and {len(ds.classes)} classes")
 
     loader = DataLoader(
