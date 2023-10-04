@@ -20,6 +20,9 @@ class ResNetTrunk(ResNet):
         x = self.layer2(x)
         x = self.layer3(x)
         x = self.layer4(x)
+
+        x = self.avgpool(x)
+        x = torch.flatten(x, 1)
         return x
 
 

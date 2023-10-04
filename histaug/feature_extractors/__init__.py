@@ -2,7 +2,7 @@ from torchvision.models import resnet50, ResNet50_Weights, swin_t, Swin_T_Weight
 from torch import nn
 import torch
 from torchvision import transforms as T
-from typing import Callable
+from typing import Callable, Optional
 
 from .ctranspath import CTransPath
 from .retccl import RetCCL
@@ -65,11 +65,12 @@ class ViT(nn.Module):
 
 
 class FeatureExtractor(nn.Module):
-    def __init__(self, model: nn.Module, transform: Callable[[torch.Tensor], torch.Tensor]):
+    def __init__(self, model: nn.Module, transform: Callable[[torch.Tensor], torch.Tensor], name: Optional[str] = None):
         super().__init__()
         model.eval()
         self.model = model
         self.transform = transform
+        self.name = name or model.__class__.__name__
 
     def forward(self, x):
         return self.model(self.transform(x))
@@ -79,31 +80,31 @@ _imagenet_transform = T.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD)
 _lunit_transform = T.Normalize(mean=LUNIT_MEAN, std=LUNIT_STD)
 
 FEATURE_EXTRACTORS = {
-    "ctranspath": lambda: FeatureExtractor(CTransPath(), transform=_imagenet_transform),
-    "retccl": lambda: FeatureExtractor(RetCCL(), transform=_imagenet_transform),
-    "resnet50": lambda: FeatureExtractor(ResNet50(), transform=_imagenet_transform),
-    "swin": lambda: FeatureExtractor(SwinTransformer(), transform=_imagenet_transform),
-    "owkin": lambda: FeatureExtractor(Owkin(), transform=_imagenet_transform),
-    "vit": lambda: FeatureExtractor(ViT(), transform=_imagenet_transform),
+    "ctranspath": lambda: FeatureExtractor(CTransPath(), name="ctranspath", transform=_imagenet_transform),
+    "retccl": lambda: FeatureExtractor(RetCCL(), name="retccl", transform=_imagenet_transform),
+    "resnet50": lambda: FeatureExtractor(ResNet50(), name="resnet50", transform=_imagenet_transform),
+    "swin": lambda: FeatureExtractor(SwinTransformer(), name="swin", transform=_imagenet_transform),
+    "owkin": lambda: FeatureExtractor(Owkin(), name="owkin", transform=_imagenet_transform),
+    "vit": lambda: FeatureExtractor(ViT(), name="vit", transform=_imagenet_transform),
     "bt": lambda: FeatureExtractor(
-        lunit_resnet50(key="BT", pretrained=True, progress=True), transform=_lunit_transform
+        lunit_resnet50(key="BT", pretrained=True, progress=True), name="bt", transform=_lunit_transform
     ),
     "mocov2": lambda: FeatureExtractor(
-        lunit_resnet50(key="MoCoV2", pretrained=True, progress=True), transform=_lunit_transform
+        lunit_resnet50(key="MoCoV2", pretrained=True, progress=True), name="mocov2", transform=_lunit_transform
     ),
     "swav": lambda: FeatureExtractor(
-        lunit_resnet50(key="SwAV", pretrained=True, progress=True), transform=_lunit_transform
+        lunit_resnet50(key="SwAV", pretrained=True, progress=True), name="swav", transform=_lunit_transform
     ),
     "dino_p16": lambda: FeatureExtractor(
-        lunit_vit_small(key="DINO_p16", pretrained=True, progress=True), transform=_lunit_transform
+        lunit_vit_small(key="DINO_p16", pretrained=True, progress=True), name="dino_p16", transform=_lunit_transform
     ),
     "dino_p8": lambda: FeatureExtractor(
-        lunit_vit_small(key="DINO_p8", pretrained=True, progress=True), transform=_lunit_transform
+        lunit_vit_small(key="DINO_p8", pretrained=True, progress=True), name="dino_p8", transform=_lunit_transform
     ),
 }
 
 
-def load_feature_extractor(model_name: str) -> nn.Module:
+def load_feature_extractor(model_name: str) -> FeatureExtractor:
     try:
         return FEATURE_EXTRACTORS[model_name]()
     except KeyError:

@@ -9,7 +9,7 @@ from collections import defaultdict
 
 from ..data import SlidesDataset
 from ..augmentations import load_augmentations, Augmentations
-from ..feature_extractors import load_feature_extractor, FEATURE_EXTRACTORS
+from ..feature_extractors import load_feature_extractor, FEATURE_EXTRACTORS, FeatureExtractor
 from ..utils import save_features, check_version
 from .augmented_feature_extractor import AugmentedFeatureExtractor
 
@@ -17,7 +17,7 @@ from .augmented_feature_extractor import AugmentedFeatureExtractor
 @torch.no_grad()
 def process_dataset(
     ds: SlidesDataset,
-    model: nn.Module,
+    model: FeatureExtractor,
     augmentations: Augmentations,
     output_folder: Path,
     device="cuda",
@@ -26,7 +26,7 @@ def process_dataset(
     augmented_feature_extractor = AugmentedFeatureExtractor(model, augmentations)
     augmented_feature_extractor.to(device)
 
-    for slide in tqdm(ds, desc="Processing slides", position=0, leave=True):
+    for slide in tqdm(ds, desc=f"Processing slides with {model.name}", position=0, leave=True):
         output_file = output_folder / f"{slide.name}.zarr"
         if output_file.exists() and check_version(output_file, throw=False):
             logger.info(f"Skipping slide {slide.name}, output file {output_file} already exists")

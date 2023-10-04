@@ -135,8 +135,8 @@ class LitMilTransformer(pl.LightningModule):
         logits = self(feats, coords, mask)
 
         softmaxed = {
-            target_label: (torch.softmax(x, -1) if self.cfg[target_label].type == "categorical" else x)
-            for target_label, x in logits.items()
+            t.column: (torch.softmax(logits[t.column], -1) if t.type == "categorical" else logits[t.column])
+            for t in self.targets
         }
         return softmaxed
 
@@ -319,7 +319,7 @@ def train_fold(
         f"Using fold {crossval_fold} for validation, contains {(folds == crossval_fold).mean()*100:.1f}% of patients"
     )
 
-    valid_mask = folds == (crossval_fold if crossval_fold is not None else -1)
+    valid_mask = folds == crossval_fold
     train_items, valid_items = folds.index[~valid_mask], folds.index[valid_mask]
     train_df, valid_df = dataset_df.loc[train_items], dataset_df.loc[valid_items]
 
@@ -417,5 +417,5 @@ def train_nocrossval(cfg: DictConfig, dataset_df: pd.DataFrame, folds: pd.Series
 
 @hydra.main(config_path=str(Path(histaug.__file__).parent.with_name("conf")), config_name="config", version_base="1.3")
 @setup
-def train_oneval(cfg: DictConfig, dataset_df: pd.DataFrame, folds: pd.Series) -> None:
+def train_onecrossval(cfg: DictConfig, dataset_df: pd.DataFrame, folds: pd.Series) -> None:
     train_fold(cfg, dataset_df, folds, crossval_id=None, crossval_fold=0, run_prefix="train")

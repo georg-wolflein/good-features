@@ -2,6 +2,7 @@ from torch import nn
 import torch
 from typing import Dict, Tuple
 
+
 from ..augmentations import Augmentations
 
 
@@ -13,6 +14,10 @@ class AugmentedFeatureExtractor(nn.Module):
 
     def forward(self, patches, norm_patches=None) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
         feats = self.feature_extractor(patches)
-        feats_augs = {aug_name: self.feature_extractor(aug(patches)) for aug_name, aug in self.augmentations.items()}
+
+        augs = {aug_name: aug(patches) for aug_name, aug in self.augmentations.items()}
+        feats_augs = {aug_name: self.feature_extractor(aug) for aug_name, aug in augs.items()}
+
         feats_norm = self.feature_extractor(norm_patches) if norm_patches is not None else None
+
         return feats, feats_augs, feats_norm

@@ -1,3 +1,1 @@
-from . import train_nocrossval
-
-train_nocrossval()
+print("Please use train.noval, train.oneval or train.crossval instead of train.")

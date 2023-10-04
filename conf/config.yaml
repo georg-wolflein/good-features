@@ -15,8 +15,8 @@ dataset: # some more options will be added by the dataset config in conf/dataset
   augmentations: # will be overwritten by augmentations from conf/augmentations
   batch_size: 1
   instances_per_bag: 8192
-  num_workers: 32
-accumulate_grad_samples: 8
+  num_workers: 16
+accumulate_grad_samples: 4
 model:
   # _target_: histaug.train.models.MeanAveragePooling
   _target_: histaug.train.models.AttentionMIL
@@ -30,10 +30,10 @@ tune_lr: false
 optimizer:
   _target_: torch.optim.AdamW
   lr: 1e-3
-  weight_decay: 1.
+  weight_decay: 1e-2
 scheduler:
-  # _target_: torch.optim.lr_scheduler.CosineAnnealingLR
-  # T_max: ${max_epochs}
+  _target_: torch.optim.lr_scheduler.CosineAnnealingLR
+  T_max: ${max_epochs}
 early_stopping:
   metric: val/${dataset.targets[0].column}/auroc
   goal: max

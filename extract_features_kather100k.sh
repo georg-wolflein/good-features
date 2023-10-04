@@ -2,8 +2,8 @@
 
 # MODELS=(ctranspath swin retccl resnet50 owkin vit)
 # MODELS=(bt swav dino_p16 dino_p8)
-MODELS=(bt swav dino_p16)
-GPUS=(3 4 7)
+MODELS=(bt swav)
+GPUS=(3 4)
 session="extract"
 
 tmux new-session -d -s $session

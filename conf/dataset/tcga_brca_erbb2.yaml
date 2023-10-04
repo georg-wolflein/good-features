@@ -1,14 +1,16 @@
-name: tcga_brca_subtypes
-clini_tables: ["/metadata/TCGA_BRCA_CLINI.xlsx"]
-slide_tables: ["/metadata/shiprec/TCGA_BRCA_SLIDE_DX.csv"]
+name: tcga_brca_erbb2
+clini_tables: ["/metadata/TCGA-BRCA-DX_CLINI.csv"]
+slide_tables: ["/metadata/TCGA-BRCA-DX_SLIDE.csv"]
 feature_dirs: ["/data/histaug/results/TCGA-BRCA-DX/${settings.feature_extractor}"]
+folds_table: "/metadata/TCGA-BRCA-DX_FOLDS_${dataset.targets[0].column}.csv"
 filename_col: FILENAME
 patient_col: PATIENT
 targets:
-  - column: Subtype
+  - column: ERBB2
     type: categorical
-    classes: [BRCA_Basal, BRCA_Her2, BRCA_LumA, BRCA_LumB, BRCA_Normal]
-    weights: [0.1066, 0.2413, 0.0358, 0.0871, 0.5291]
+    classes: ["0", "1"]
+    weights: 
+    # weights: [0.1066, 0.2413, 0.0358, 0.0871, 0.5291]
     #               freq  inv freq  weight
     # BRCA_Basal  0.1711    0.1066  1.0000
     # BRCA_Her2   0.0756    0.2413  1.0000
