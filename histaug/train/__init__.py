@@ -46,7 +46,8 @@ class LitMilTransformer(pl.LightningModule):
     ) -> None:
         super().__init__()
 
-        self.save_hyperparameters(cfg)
+        # This actually overwrites wandb config, but we don't want that
+        # self.save_hyperparameters(OmegaConf.to_container(cfg, resolve=True, throw_on_missing=True))
 
         self.model: nn.Module = hydra.utils.instantiate(cfg.model)
         self.targets = cfg.dataset.targets
@@ -186,21 +187,17 @@ def train(
     wandb_logger = WandbLogger(
         name,
         project=cfg.project,
-        job_type="cv" if crossval_id is not None else "train",
+        job_type="cv" if crossval_id else "train",
     )
-    wandb_logger.log_hyperparams(
-        {
-            **OmegaConf.to_container(cfg, resolve=True, throw_on_missing=True),
-            "overrides": " ".join(sys.argv[1:]),
-        }
-    )
+    wandb_logger.experiment.config.update(OmegaConf.to_container(cfg, resolve=True, throw_on_missing=True))
+    wandb_logger.experiment.config["overrides"] = " ".join(sys.argv[1:])
     wandb_logger.experiment.log_code(
         ".",
         include_fn=lambda path: Path(path).suffix in {".py", ".yaml", ".yml"} and "env" not in Path(path).parts,
     )
     if crossval_id is not None:
         if crossval_id == "":
-            crossval_id = wandb_logger.version
+            crossval_id = wandb_logger.experiment.id
         wandb_logger.experiment.config.update({"crossval_id": crossval_id, "crossval_fold": crossval_fold})
     wandb_logger.experiment.tags = (*wandb_logger.experiment.tags, *augmentation_keys)
 
@@ -400,12 +397,12 @@ def setup(func):
 @hydra.main(config_path=str(Path(histaug.__file__).parent.with_name("conf")), config_name="config", version_base="1.3")
 @setup
 def train_crossval(cfg: DictConfig, dataset_df: pd.DataFrame, folds: pd.Series) -> None:
-    crossval_id = None
+    crossval_id = ""
     for fold in sorted(folds.unique()):
         model, trainer, out_dir, wandb_logger = train_fold(
-            cfg, dataset_df, folds, crossval_id=cfg.name, crossval_fold=fold, run_prefix="crossval"
+            cfg, dataset_df, folds, crossval_id=crossval_id, crossval_fold=fold, run_prefix="crossval"
         )
-        if crossval_id is None:
+        if not crossval_id:
             crossval_id = wandb_logger.experiment.config["crossval_id"]
 
 

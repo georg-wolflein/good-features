@@ -9,7 +9,7 @@ targets:
   - column: ERBB2
     type: categorical
     classes: ["0", "1"]
-    weights: 
+    weights: [0.15, 0.85]
     # weights: [0.1066, 0.2413, 0.0358, 0.0871, 0.5291]
     #               freq  inv freq  weight
     # BRCA_Basal  0.1711    0.1066  1.0000
