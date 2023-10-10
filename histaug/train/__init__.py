@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Sequence, Tuple, Optional
+from typing import Sequence, Tuple, Optional, Mapping
 import sys
 import pandas as pd
 import pytorch_lightning as pl
@@ -249,19 +249,19 @@ def make_trainer(
     return model, trainer, out_dir, wandb_logger
 
 
-def load_dataset_df(cfg: DictConfig):
+def load_dataset_df(dataset_cfg: DictConfig):
     dataset_df = make_dataset_df(
-        clini_tables=pathlist(cfg.dataset.clini_tables),
-        slide_tables=pathlist(cfg.dataset.slide_tables),
-        feature_dirs=pathlist(cfg.dataset.feature_dirs),
-        patient_col=cfg.dataset.patient_col,
-        filename_col=cfg.dataset.filename_col,
-        target_labels=[label.column for label in cfg.dataset.targets],
+        clini_tables=pathlist(dataset_cfg.clini_tables),
+        slide_tables=pathlist(dataset_cfg.slide_tables),
+        feature_dirs=pathlist(dataset_cfg.feature_dirs),
+        patient_col=dataset_cfg.patient_col,
+        filename_col=dataset_cfg.filename_col,
+        target_labels=[label.column for label in dataset_cfg.targets],
     )
 
     # Remove patients with no target labels
     to_delete = pd.Series(False, index=dataset_df.index)
-    for target in cfg.dataset.targets:
+    for target in dataset_cfg.targets:
         to_delete |= dataset_df[target.column].isna()
         if target.type == "categorical":
             to_delete |= ~dataset_df[target.column].isin(target.classes)
@@ -391,9 +391,46 @@ def train_fold(
     )
     preds_df.to_csv(out_dir / "valid-patient-preds.csv")
 
+    if cfg.test.enabled:
+        test(cfg, model, trainer, encoders, out_dir)
+
     wandb_logger.experiment.finish()
 
     return model, trainer, out_dir, wandb_logger
+
+
+def test(
+    cfg: DictConfig,
+    model: LitMilTransformer,
+    trainer: pl.Trainer,
+    target_encoders: Mapping[str, TargetEncoder],
+    out_dir: Path,
+):
+    test_df = load_dataset_df(cfg.test.dataset)
+    test_targets = {t: encoder(test_df) for t, encoder in target_encoders.items()}
+    test_ds = FeatureDataset(
+        bags=test_df.path.values,
+        targets=test_targets,
+        instances_per_bag=cfg.dataset.instances_per_bag,
+        augmentations=cfg.dataset.augmentations.val,
+    )
+    test_dl = DataLoader(
+        test_ds,
+        batch_size=cfg.dataset.batch_size,
+        num_workers=cfg.dataset.num_workers,
+        pin_memory=True,
+        collate_fn=test_ds.collate_fn,
+    )
+
+    trainer.test(model=model, dataloaders=test_dl)
+
+    predictions = flatten_batched_dicts(trainer.predict(model=model, dataloaders=test_dl, return_predictions=True))
+    preds_df = make_preds_df(
+        predictions=predictions,
+        base_df=test_df,
+        categories={target.column: target.classes for target in cfg.test.dataset.targets},
+    )
+    preds_df.to_csv(out_dir / "test-patient-preds.csv")
 
 
 def setup(func):
@@ -402,7 +439,7 @@ def setup(func):
         pl.seed_everything(cfg.seed)
         torch.set_float32_matmul_precision("medium")
 
-        dataset_df = load_dataset_df(cfg)
+        dataset_df = load_dataset_df(cfg.dataset)
         folds = get_folds(cfg, dataset_df)
         return func(cfg, dataset_df=dataset_df, folds=folds)
 
