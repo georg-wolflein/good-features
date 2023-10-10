@@ -15,6 +15,7 @@ import os
 from textwrap import indent
 from loguru import logger
 import numpy as np
+import functools
 
 os.environ["HYDRA_FULL_ERROR"] = "1"
 
@@ -70,9 +71,13 @@ class LitMilTransformer(pl.LightningModule):
         self.losses = nn.ModuleDict(
             {
                 target.column: nn.CrossEntropyLoss(
-                    weight=torch.tensor(target.weights, device=self.device, dtype=torch.float)
-                    if target.weights
-                    else None,
+                    weight=(
+                        w := torch.tensor(target.weights, device=self.device, dtype=torch.float)
+                        if target.weights
+                        else torch.ones(len(target.classes), device=self.device, dtype=torch.float)
+                    )
+                    / w.sum(),
+                    reduction="sum",
                 )
                 if target.type == "categorical"
                 else nn.MSELoss()
@@ -143,7 +148,11 @@ class LitMilTransformer(pl.LightningModule):
 
     def configure_optimizers(self):
         optimizer = hydra.utils.instantiate(self.cfg.optimizer, params=self.parameters())
-        scheduler = hydra.utils.instantiate(self.cfg.scheduler, optimizer=optimizer) if self.cfg.scheduler else None
+        scheduler = (
+            hydra.utils.instantiate(self.cfg.scheduler, optimizer=optimizer)
+            if self.cfg.get("scheduler", None)
+            else None
+        )
         return optimizer if scheduler is None else ([optimizer], [scheduler])
 
     @property
@@ -170,14 +179,14 @@ class DefineWandbMetricsCallback(Callback):
             self.run.define_metric(name, goal=f"{goal}imize", step_metric="epoch", summary="best")
 
 
-def train(
+def make_trainer(
     cfg: DictConfig,
-    train_dl: DataLoader,
-    valid_dl: DataLoader,
+    dummy_batch: torch.Tensor,
     crossval_id: Optional[str] = None,
     crossval_fold: Optional[int] = None,
     augmentation_keys: Optional[Sequence[str]] = (),
     run_prefix: str = "",
+    callbacks: Sequence[Callback] = (),
 ) -> Tuple[LitMilTransformer, pl.Trainer, Path, WandbLogger]:
     model = LitMilTransformer(cfg)
 
@@ -206,18 +215,12 @@ def train(
         out_dir = Path(cfg.output_dir) / crossval_id / f"fold{crossval_fold}_{wandb_logger.version}"
 
     define_metrics_callback = DefineWandbMetricsCallback(model, wandb_logger.experiment)
-    model_checkpoint_callback = ModelCheckpoint(
-        monitor=cfg.early_stopping.metric,
-        mode=cfg.early_stopping.goal,
-        filename="checkpoint-{epoch:02d}-{" + cfg.early_stopping.metric + ":0.3f}",
-        save_last=True,
-    )
 
     callbacks = [
-        DummyBiggestBatchFirstCallback(train_dl.dataset.dummy_batch(cfg.dataset.batch_size)),
-        model_checkpoint_callback,
-        define_metrics_callback,
+        DummyBiggestBatchFirstCallback(dummy_batch),
         TQDMProgressBar(refresh_rate=10),
+        define_metrics_callback,
+        *callbacks,
     ]
 
     if cfg.early_stopping.enabled:
@@ -242,20 +245,6 @@ def train(
         gradient_clip_val=cfg.grad_clip,
         logger=[CSVLogger(save_dir=out_dir), wandb_logger],
     )
-
-    print(model)
-
-    if cfg.tune_lr:
-        tuner = pl.tuner.tuning.Tuner(trainer)
-        tuner.lr_find(model=model, train_dataloaders=train_dl, val_dataloaders=valid_dl)
-        logger.info(f"Best learning rate: {model.learning_rate}")
-
-    trainer.fit(model=model, train_dataloaders=train_dl, val_dataloaders=valid_dl)
-
-    torch.save(model_checkpoint_callback.state_dict(), out_dir / "checkpoints.pth")
-
-    if cfg.restore_best_checkpoint:
-        model = model.load_from_checkpoint(model_checkpoint_callback.best_model_path)
 
     return model, trainer, out_dir, wandb_logger
 
@@ -364,9 +353,34 @@ def train_fold(
         collate_fn=valid_ds.collate_fn,
     )
 
-    model, trainer, out_dir, wandb_logger = train(
-        cfg, train_dl, valid_dl, crossval_fold=crossval_fold, crossval_id=crossval_id, run_prefix=run_prefix
+    model_checkpoint_callback = ModelCheckpoint(
+        monitor=cfg.early_stopping.metric,
+        mode=cfg.early_stopping.goal,
+        filename="checkpoint-{epoch:02d}-{" + cfg.early_stopping.metric + ":0.3f}",
+        save_last=True,
     )
+
+    model, trainer, out_dir, wandb_logger = make_trainer(
+        cfg,
+        dummy_batch=train_ds.dummy_batch(cfg.dataset.batch_size),
+        crossval_fold=crossval_fold,
+        crossval_id=crossval_id,
+        run_prefix=run_prefix,
+        callbacks=[model_checkpoint_callback],
+    )
+    print(model)
+
+    if cfg.tune_lr:
+        tuner = pl.tuner.tuning.Tuner(trainer)
+        tuner.lr_find(model=model, train_dataloaders=train_dl, val_dataloaders=valid_dl)
+        logger.info(f"Best learning rate: {model.learning_rate}")
+
+    trainer.fit(model=model, train_dataloaders=train_dl, val_dataloaders=valid_dl)
+
+    torch.save(model_checkpoint_callback.state_dict(), out_dir / "checkpoints.pth")
+
+    if cfg.restore_best_checkpoint:
+        model = model.load_from_checkpoint(model_checkpoint_callback.best_model_path, cfg=cfg)
 
     predictions = flatten_batched_dicts(trainer.predict(model=model, dataloaders=valid_dl, return_predictions=True))
 
@@ -383,6 +397,7 @@ def train_fold(
 
 
 def setup(func):
+    @functools.wraps(func)
     def wrapper(cfg: DictConfig):
         pl.seed_everything(cfg.seed)
         torch.set_float32_matmul_precision("medium")

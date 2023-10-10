@@ -1,0 +1,12 @@
+name: cptac_erbb2
+clini_tables: ["/metadata/CPTAC-BRCA_CLINI.csv"]
+slide_tables: ["/metadata/CPTAC-BRCA_SLIDE.csv"]
+feature_dirs: ["/data/histaug/results/CPTAC-BRCA/${settings.feature_extractor}"]
+folds_table: "/metadata/CPTAC-BRCA_FOLDS_${dataset.targets[0].column}.csv"
+filename_col: FILENAME
+patient_col: PATIENT
+targets:
+  - column: subtype
+    type: categorical
+    classes: ["Basal", "Her2", "LumA", "LumB", "Normal"]
+    weights: 

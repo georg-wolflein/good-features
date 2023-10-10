@@ -1,0 +1,20 @@
+name: tcga_brca_subtype
+clini_tables: ["/metadata/TCGA-BRCA_CLINI.csv"]
+slide_tables: ["/metadata/TCGA-BRCA_SLIDE.csv"]
+feature_dirs: ["/data/histaug/results/TCGA-BRCA/${settings.feature_extractor}"]
+folds_table: "/metadata/TCGA-BRCA_FOLDS_${dataset.targets[0].column}.csv"
+filename_col: FILENAME
+patient_col: PATIENT
+targets:
+  - column: subtype
+    type: categorical
+    classes: ["Basal", "Her2", "LumA", "LumB", "Normal"]
+    weights: #[0.0988, 0.2288, 0.0370, 0.0863, 0.5491]
+    # weights: [1., 1., 1., 1., 1.]
+    #            freq  inv freq  weight                                                                                                                                                                           
+    # Basal  0.1844    0.0988  1.0000                                                                                                                                                                             
+    # Her2   0.0796    0.2288  1.0000                                                                                                                                                                             
+    # LumA   0.4920    0.0370  1.0000                                                                                                                                                                             
+    # LumB   0.2109    0.0863  1.0000                                                                                                                                                                             
+    # Normal 0.0332    0.5491  1.0000
+

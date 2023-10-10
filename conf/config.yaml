@@ -1,6 +1,7 @@
 defaults:
   - _self_
-  - dataset@dataset: camelyon16_train
+  - dataset@dataset: tcga_brca_subtype
+  - test.dataset@dataset: cptac_brca_subtype
   - augmentations@dataset.augmentations: none
 
 settings:
@@ -9,7 +10,7 @@ settings:
 
 name: ${dataset.name}-${model_name:${model._target_}}-${settings.feature_extractor}
 project: histaug
-output_dir: /data/histaug/results/train/${dataset.name}
+output_dir: /data/histaug/train/${dataset.name}
 seed: 0 # leave empty to use random seed
 dataset: # some more options will be added by the dataset config in conf/dataset
   augmentations: # will be overwritten by augmentations from conf/augmentations
@@ -24,8 +25,13 @@ model:
   hidden_dim: 256
   targets: ${dataset.targets}
   batchnorm: false
-deploy:
-  checkpoint: #/mnt/bulk/gwoelflein/georg-transformers/output/mq1jcaq8/lightning_logs/version_0/checkpoints/last.ckpt
+test:
+  enabled: true
+  dataset: # some more options will be added by the dataset config in conf/dataset
+    augmentations: ${dataset.augmentations.val}
+    batch_size: ${dataset.batch_size}
+    instances_per_bag: ${dataset.instances_per_bag}
+    num_workers: ${dataset.num_workers}
 tune_lr: false
 optimizer:
   _target_: torch.optim.AdamW
@@ -35,10 +41,12 @@ scheduler:
   _target_: torch.optim.lr_scheduler.CosineAnnealingLR
   T_max: ${max_epochs}
 early_stopping:
-  metric: val/${dataset.targets[0].column}/auroc
-  goal: max
+  # metric: val/${dataset.targets[0].column}/auroc
+  # goal: max
+  metric: val/loss
+  goal: min
   patience: 10
-  enabled: false
+  enabled: true
 restore_best_checkpoint: true
 max_epochs: 30
 grad_clip: #.5

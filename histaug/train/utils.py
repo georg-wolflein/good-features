@@ -190,7 +190,7 @@ def summarize_dataset(targets: ListConfig, df: pd.DataFrame):
             inv_value_counts = 1.0 / value_counts
             inv_value_counts /= inv_value_counts.sum()
             weights = target.weights or ([1.0] * len(target.classes))
-            weights = pd.Series(weights, index=target.classes)
+            weights = pd.Series(weights, index=target.classes) / sum(weights)
             merged = (
                 value_counts.to_frame("freq")
                 .join(inv_value_counts.to_frame("inv freq"), how="outer")

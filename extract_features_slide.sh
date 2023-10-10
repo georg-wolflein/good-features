@@ -9,10 +9,12 @@ model="$1" # "ctranspath" "swin" "retccl" "resnet50" "owkin" "vit"
 
 # dataset="/data/shiprec/camelyon16/training"
 # output="/data/histaug/results/camelyon16"
-dataset="/data/shiprec/TCGA-BRCA-DX"
-output="/data/histaug/results/TCGA-BRCA-DX"
+# dataset="/data/shiprec/TCGA-BRCA-DX"
+# output="/data/histaug/results/TCGA-BRCA-DX"
 # dataset="/data/shiprec/CPTAC-BRCA"
 # output="/data/histaug/results/CPTAC-BRCA"
+dataset="/data/shiprec/camelyon17/training"
+output="/data/histaug/results/camelyon17"
 
 GPUS=("${@:2}")
 CMDS=(
