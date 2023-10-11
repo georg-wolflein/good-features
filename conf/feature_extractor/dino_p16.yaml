@@ -1,0 +1,5 @@
+# @package _global_
+
+settings:
+  feature_extractor: dino_p16
+  feature_dim: 384

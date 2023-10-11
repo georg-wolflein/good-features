@@ -5,8 +5,8 @@ defaults:
   - augmentations@dataset.augmentations: none
 
 settings:
-  feature_dim: 768
   feature_extractor: ctranspath
+  feature_dim: 768
 
 name: ${dataset.name}-${model_name:${model._target_}}-${settings.feature_extractor}
 project: histaug
@@ -19,12 +19,11 @@ dataset: # some more options will be added by the dataset config in conf/dataset
   num_workers: 16
 accumulate_grad_samples: 4
 model:
-  # _target_: histaug.train.models.MeanAveragePooling
-  _target_: histaug.train.models.AttentionMIL
-  d_features: ${settings.feature_dim}
-  hidden_dim: 256
-  targets: ${dataset.targets}
-  batchnorm: false
+  # _target_: histaug.train.models.AttentionMIL
+  # d_features: ${settings.feature_dim}
+  # hidden_dim: 256
+  # targets: ${dataset.targets}
+  # batchnorm: false
 test:
   enabled: true
   dataset: # some more options will be added by the dataset config in conf/dataset

@@ -1,0 +1,5 @@
+# @package _global_
+
+settings:
+  feature_extractor: ctranspath
+  feature_dim: 768
