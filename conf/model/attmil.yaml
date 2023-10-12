@@ -1,5 +1,5 @@
 _target_: histaug.train.models.AttentionMIL
 d_features: ${settings.feature_dim}
-hidden_dim: 256
+hidden_dim: 512
 targets: ${dataset.targets}
 batchnorm: false

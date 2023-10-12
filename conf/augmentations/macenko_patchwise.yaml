@@ -1,3 +1,4 @@
+name: Macenko_patchwise
 train:
 - Macenko
 val:

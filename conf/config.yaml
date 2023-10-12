@@ -3,6 +3,7 @@ defaults:
   - dataset@dataset: tcga_brca_subtype
   - dataset@test.dataset: cptac_brca_subtype
   - augmentations@dataset.augmentations: none
+  - model@model: attmil
 
 settings:
   feature_extractor: ctranspath

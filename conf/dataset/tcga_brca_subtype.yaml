@@ -1,4 +1,4 @@
-name: tcga_brca_subtype
+name: tcga_brca_${dataset.targets[0].column}
 clini_tables: ["/metadata/TCGA-BRCA_CLINI.csv"]
 slide_tables: ["/metadata/TCGA-BRCA_SLIDE.csv"]
 feature_dirs: ["/data/histaug/results/TCGA-BRCA/${settings.feature_extractor}"]

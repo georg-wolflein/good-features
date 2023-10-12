@@ -6,7 +6,7 @@ folds_table: "/metadata/CPTAC-BRCA_FOLDS_${dataset.targets[0].column}.csv"
 filename_col: FILENAME
 patient_col: PATIENT
 targets:
-  - column: subtype
+  - column: CDH1
     type: categorical
-    classes: ["Basal", "Her2", "LumA", "LumB", "Normal"]
+    classes: [0, 1]
     weights: 

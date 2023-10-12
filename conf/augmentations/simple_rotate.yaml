@@ -1,3 +1,4 @@
+name: simple_rotate
 train:
 - ORIGINAL
 - flip horizontal
