@@ -17,7 +17,7 @@ dataset: # some more options will be added by the dataset config in conf/dataset
   augmentations: # will be overwritten by augmentations from conf/augmentations
   batch_size: 1
   instances_per_bag: 8192
-  num_workers: 16
+  num_workers: 8
 accumulate_grad_samples: 4
 model:
   # _target_: histaug.train.models.AttentionMIL

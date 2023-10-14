@@ -23,22 +23,22 @@ def run(dry_run: bool = False, check_wandb: bool = True):
 
     # Generate configs
     configs = []
-    # for experiment in ("brca_subtype", "brca_CDH1", "brca_TP53", "brca_PIK3CA"):
-    for experiment in ("brca_subtype",):
+    # for experiment in ("brca_subtype",):
+    for experiment in ("brca_subtype", "brca_CDH1", "brca_TP53", "brca_PIK3CA"):
         for model in ("attmil", "map"):
             for feature_extractor in (
                 "ctranspath",
                 "owkin",
                 "swin",
                 "vit",
-                "retccl",
-                "resnet50",
-                "bt",
-                "swav",
-                "dino_p16",
+                # "retccl",
+                # "resnet50",
+                # "bt",
+                # "swav",
+                # "dino_p16",
             ):
-                # for augmentations in ("none", "macenko_patchwise", "simple_rotate", "all"):
-                for augmentations in ("none", "macenko_patchwise", "simple_rotate"):
+                # for augmentations in ("none", "macenko_patchwise", "simple_rotate"):
+                for augmentations in ("none", "macenko_patchwise", "simple_rotate", "all"):
                     for seed in range(5):
                         config = {
                             "+experiment": experiment,
@@ -68,7 +68,7 @@ def run(dry_run: bool = False, check_wandb: bool = True):
         def run_exists_for_config(config):
             overrides = set(f"{k}={v}" for k, v in config.items())
             for run in runs:
-                if set(run.config["overrides"].split(" ")) == overrides:
+                if set(run.config.get("overrides", "").split(" ")) == overrides:
                     logger.debug(f"Config {' '.join(f'{k}={v}' for k, v in config.items())} already exists on wandb")
                     return True
             return False
@@ -96,13 +96,13 @@ def run(dry_run: bool = False, check_wandb: bool = True):
             configs_and_paths.append((config, path))
         logger.info(f"Generated task files")
 
-        # Split tasks across GPUs
-        configs_per_gpu = {gpu: [] for gpu in GPUS}
+        # Split tasks across workers
+        configs_per_worker = [[] for _ in range(len(GPUS))]
         for i, (config, path) in enumerate(configs_and_paths):
-            configs_per_gpu[GPUS[i % len(GPUS)]].append((config, path))
+            configs_per_worker[i % len(configs_per_worker)].append((config, path))
 
-        for gpu, configs in configs_per_gpu.items():
-            script = log_dir / f"run_{gpu}.sh"
+        for worker, (gpu, configs) in enumerate(zip(GPUS, configs_per_worker)):
+            script = log_dir / f"run_{worker}.sh"
             with script.open("w") as f:
                 f.write("#!/bin/bash\n")
                 for i, (config, path) in enumerate(configs, 1):
@@ -124,11 +124,11 @@ def run(dry_run: bool = False, check_wandb: bool = True):
         # Run scripts using tmux
         server = libtmux.Server()
         session = server.new_session("histaug-experiments")
-        for gpu in configs_per_gpu.keys():
-            window = session.new_window(window_name=f"gpu{gpu}")
+        for worker, gpu in enumerate(GPUS):
+            window = session.new_window(window_name=f"worker{worker}-gpu{gpu}")
             # send keys to window
             window.select_pane(0).send_keys(f"source env/bin/activate")
-            window.select_pane(0).send_keys(f"sleep {gpu*2} && source {log_dir / f'run_{gpu}.sh'}")
+            window.select_pane(0).send_keys(f"sleep {worker*2} && source {log_dir / f'run_{worker}.sh'}")
 
         logger.info(f"Started tmux session")
 
