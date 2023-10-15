@@ -30,3 +30,4 @@ train:
 # - Macenko
 val:
 - ORIGINAL
+test: ${.val}

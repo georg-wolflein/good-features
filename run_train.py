@@ -5,7 +5,7 @@ import shutil
 import libtmux
 import hashlib
 
-GPUS = [0, 1, 2, 3, 4, 5, 6, 7]
+GPUS = [1, 2, 3, 4, 5, 6, 7]
 
 
 def run(dry_run: bool = False, check_wandb: bool = True):
@@ -37,8 +37,8 @@ def run(dry_run: bool = False, check_wandb: bool = True):
                 # "swav",
                 # "dino_p16",
             ):
-                # for augmentations in ("none", "macenko_patchwise", "simple_rotate"):
-                for augmentations in ("none", "macenko_patchwise", "simple_rotate", "all"):
+                # for augmentations in ("none", "macenko_patchwise", "simple_rotate", "all"):
+                for augmentations in ("none", "macenko_patchwise"):
                     for seed in range(5):
                         config = {
                             "+experiment": experiment,

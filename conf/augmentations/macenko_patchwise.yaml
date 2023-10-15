@@ -3,3 +3,4 @@ train:
 - Macenko
 val:
 - Macenko
+test: ${.val}

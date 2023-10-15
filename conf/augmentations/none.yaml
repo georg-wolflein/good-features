@@ -3,3 +3,4 @@ train:
 - ORIGINAL
 val:
 - ORIGINAL
+test: ${.val}

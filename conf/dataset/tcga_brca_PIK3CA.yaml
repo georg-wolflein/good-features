@@ -1,12 +1,10 @@
-name: tcga_brca_${dataset.targets[0].column}
-clini_tables: ["/metadata/TCGA-BRCA_CLINI.csv"]
-slide_tables: ["/metadata/TCGA-BRCA_SLIDE.csv"]
-feature_dirs: ["/data/histaug/results/TCGA-BRCA/${settings.feature_extractor}"]
-folds_table: "/metadata/TCGA-BRCA_FOLDS_${dataset.targets[0].column}.csv"
-filename_col: FILENAME
-patient_col: PATIENT
+defaults:
+  - _tcga_brca
+  - _self_
+
+name: tcga_brca_${.targets[0].column}
 targets:
   - column: PIK3CA
     type: categorical
-    classes: [0, 1]
+    classes: ["0", "1"]
     weights: 

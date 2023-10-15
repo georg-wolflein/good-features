@@ -324,6 +324,7 @@ def train_fold(
     valid_targets = {t: encoder(valid_df) for t, encoder in encoders.items()}
 
     train_ds = FeatureDataset(
+        patient_ids=train_df.index,
         bags=train_df.path.values,
         targets=train_targets,
         instances_per_bag=cfg.dataset.instances_per_bag,
@@ -340,6 +341,7 @@ def train_fold(
     )
 
     valid_ds = FeatureDataset(
+        patient_ids=valid_df.index,
         bags=valid_df.path.values,
         targets=valid_targets,
         instances_per_bag=cfg.dataset.instances_per_bag,
@@ -409,10 +411,11 @@ def test(
     test_df = load_dataset_df(cfg.test.dataset)
     test_targets = {t: encoder(test_df) for t, encoder in target_encoders.items()}
     test_ds = FeatureDataset(
+        patient_ids=test_df.index,
         bags=test_df.path.values,
         targets=test_targets,
         instances_per_bag=cfg.dataset.instances_per_bag,
-        augmentations=cfg.dataset.augmentations.val,
+        augmentations=cfg.dataset.augmentations.test,
     )
     test_dl = DataLoader(
         test_ds,

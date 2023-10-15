@@ -8,6 +8,10 @@ defaults:
 settings:
   feature_extractor: ctranspath
   feature_dim: 768
+  metadata_dir: /metadata
+  features_dir: /data/histaug/results
+  cache_dir: /data/histaug/cache
+  folds_dir: /data/histaug/folds
 
 name: ${dataset.name}-${model_name:${model._target_}}-${settings.feature_extractor}
 project: histaug
@@ -28,7 +32,7 @@ model:
 test:
   enabled: true
   dataset: # some more options will be added by the dataset config in conf/dataset
-    augmentations: ${dataset.augmentations.val}
+    augmentations: ${dataset.augmentations}
     batch_size: ${dataset.batch_size}
     instances_per_bag: ${dataset.instances_per_bag}
     num_workers: ${dataset.num_workers}

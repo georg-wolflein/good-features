@@ -8,3 +8,4 @@ train:
 - rotate 270°
 val:
 - ORIGINAL
+test: ${.val}

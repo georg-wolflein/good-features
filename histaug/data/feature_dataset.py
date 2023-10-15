@@ -15,6 +15,7 @@ NORMALIZED_FEATURES = "NORMALIZED"
 class FeatureDataset(Dataset):
     def __init__(
         self,
+        patient_ids: Sequence[str],
         bags: Sequence[Union[str, Path]],
         targets: Optional[Mapping[str, torch.Tensor]],
         instances_per_bag: Optional[int] = None,
@@ -23,6 +24,7 @@ class FeatureDataset(Dataset):
         """This dataset yields feature vectors for one slide at a time.
 
         Args:
+            patient_ids (Sequence[str]): Patient IDs.
             bags (Sequence[Union[str, Path]]): Paths to bags of features.
             instances_per_bag (Optional[int], optional): Number of instances to sample from each bag. Defaults to None (all instances).
             augmentations (Sequence[str], optional): Augmentations to apply. Be sure to include None as an augmentation; this is the original feature vector with no augmentation applied.
@@ -37,6 +39,7 @@ class FeatureDataset(Dataset):
             not pad or instances_per_bag is not None
         ), "If padding is enabled, you must specify the number of instances per bag."
 
+        self.patient_ids = patient_ids
         self.instances_per_bag = instances_per_bag
         self.pad = pad
         self.augmentations = augmentations
@@ -87,7 +90,7 @@ class FeatureDataset(Dataset):
         coords = np.concatenate(coords)
         labels = {label: target[index] for label, target in self.targets.items()} if self.targets else None
 
-        return feats, coords, labels, index
+        return feats, coords, labels, self.patient_ids[index]
 
     def transform(self, patches):
         return patches
@@ -100,7 +103,7 @@ class FeatureDataset(Dataset):
 
     def collate_fn(self, batch):
         """Collate a batch of features into a single tensor"""
-        feats, coords, labels, indices = zip(*batch)
+        feats, coords, labels, patient_ids = zip(*batch)
         n_per_instance = [f.shape[0] for f in feats]
         n_max = max(n_per_instance)
         feats = np.stack([pad(f, n_max, axis=0) for f in feats])
@@ -112,7 +115,7 @@ class FeatureDataset(Dataset):
             torch.from_numpy(coords).int(),
             mask,
             labels,
-            torch.tensor(indices, dtype=torch.long),
+            patient_ids,
         )
 
     def dummy_batch(self, batch_size: int):

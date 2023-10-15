@@ -3,3 +3,4 @@ train:
 - NORMALIZED
 val:
 - NORMALIZED
+test: ${.val}
