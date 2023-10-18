@@ -3,7 +3,7 @@ import cv2
 import torch
 from torch import nn
 from loguru import logger
-from typing import Union, Sequence, Callable, Any, Mapping
+from typing import Union, Sequence, Callable, Any, Mapping, Iterable, Optional
 from torchvision import transforms as T
 from torchvision.transforms import functional as TF
 from kornia import augmentation as K
@@ -128,8 +128,8 @@ _unloaded_augmentations: Mapping[str, Callable[[], Any]] = {
 }
 
 
-def load_augmentations() -> Augmentations:
-    return Augmentations({k: v() for k, v in _unloaded_augmentations.items()})
+def load_augmentations(keys: Optional[Iterable[str]] = None) -> Augmentations:
+    return Augmentations({k: v() for k, v in _unloaded_augmentations.items() if (not keys or k in keys)})
 
 
 def augmentation_names() -> Sequence[str]:

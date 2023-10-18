@@ -87,7 +87,9 @@ if __name__ == "__main__":
     parser.add_argument("--device", type=str, default="cuda", help="Device to use for feature extraction")
     parser.add_argument("--start", type=int, default=0, help="Index of the first slide to process")
     parser.add_argument("--end", type=int, default=None, help="Index of the last slide to process")
-    parser.add_argument("--no-augs", action="store_true", help="Disable augmentations")
+    parser.add_argument(
+        "--aug", "-a", dest="augs", nargs="+", default=None, help="Augmentations to apply (default all)"
+    )
     args = parser.parse_args()
 
     output_folder = args.output / args.model
@@ -103,7 +105,8 @@ if __name__ == "__main__":
     logger.info(f"Loaded dataset with {len(ds)} slides, will process in batches of {args.batch_size} patches")
 
     model = load_feature_extractor(args.model)
-    augmentations = Augmentations() if args.no_augs else load_augmentations()
+    augmentations = load_augmentations(args.augs)
+    logger.info(f"Using augmentations: {', '.join(sorted(augmentations.keys()))}")
 
     logger.info(f"Processing dataset, saving features to {output_folder}")
     process_dataset(ds, model, augmentations, output_folder, device=args.device, num_workers=8)
