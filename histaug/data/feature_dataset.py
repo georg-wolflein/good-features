@@ -122,7 +122,7 @@ class FeatureDataset(Dataset):
         """Create a dummy batch of the largest possible size"""
         sample_feats, sample_coords, sample_labels, *_ = self[0]
         d_model = sample_feats.shape[-1]
-        instances_per_bag = self.instances_per_bag or sample_feats.shape[-2]
+        instances_per_bag = getattr(self, "instances_per_bag", sample_feats.shape[-2])
         tile_tokens = torch.rand((batch_size, instances_per_bag, d_model))
         tile_positions = torch.rand((batch_size, instances_per_bag, 2)) * 100
         labels = {label: value.expand(batch_size, *value.shape) for label, value in sample_labels.items()}
@@ -138,3 +138,34 @@ def pad(x: np.ndarray, size: int, axis: int, fill_value: Any = 0):
     pad_width = [(0, 0)] * len(x.shape)
     pad_width[axis] = (0, size - x.shape[axis])
     return np.pad(x, pad_width=pad_width, mode="constant", constant_values=fill_value)
+
+
+class CachedFeatureDataset(Dataset):
+    """Cached version of FeatureDataset that loads cached batches that were pre-computed using histaug.train.cache."""
+
+    def __init__(self, patient_ids: Sequence[str], targets: Optional[Mapping[str, torch.Tensor]], cache_dir: Path):
+        self._cache_dir = Path(cache_dir)
+        self.patient_ids = patient_ids
+        self.targets = targets
+        self.epoch = 0  # will be overwritten by the trainer every epoch
+
+    @property
+    def cache_dir(self):
+        return self._cache_dir / f"epoch_{self.epoch:03d}"
+
+    def __getitem__(self, index):
+        patient_id = self.patient_ids[index]
+        # logger.debug(f"Loading cached batch for patient {patient_id} at epoch {self.epoch}")
+        z = zarr.open_group(self.cache_dir / f"{patient_id}.zarr", mode="r")
+        return (
+            z["feats"][:],
+            z["coords"][:],
+            {label: target[index] for label, target in self.targets.items()} if self.targets else None,
+            patient_id,
+        )
+
+    def __len__(self):
+        return len(self.patient_ids)
+
+    collate_fn = FeatureDataset.collate_fn
+    dummy_batch = FeatureDataset.dummy_batch

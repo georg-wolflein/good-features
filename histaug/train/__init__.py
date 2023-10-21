@@ -26,7 +26,7 @@ from .utils import (
     flatten_batched_dicts,
     make_preds_df,
 )
-from ..data import FeatureDataset
+from ..data import FeatureDataset, CachedFeatureDataset
 from .targets import TargetEncoder
 from .metrics import create_metrics_for_target
 from .utils import summarize_dataset
@@ -179,6 +179,17 @@ class DefineWandbMetricsCallback(Callback):
             self.run.define_metric(name, goal=f"{goal}imize", step_metric="epoch", summary="best")
 
 
+class UpdateEpochInDatasetCallback(Callback):
+    def __init__(self, dataset: FeatureDataset) -> None:
+        super().__init__()
+        self.dataset = dataset
+
+    def on_train_epoch_start(self, trainer: pl.Trainer, model: LitMilTransformer) -> None:
+        if hasattr(self.dataset, "epoch"):
+            self.dataset.epoch = model.current_epoch
+            # logger.debug(f"Updated epoch in dataset to {self.dataset.epoch}")
+
+
 def make_trainer(
     cfg: DictConfig,
     dummy_batch: torch.Tensor,
@@ -323,14 +334,22 @@ def train_fold(
     train_targets = {t: encoder.fit(train_df) for t, encoder in encoders.items()}
     valid_targets = {t: encoder(valid_df) for t, encoder in encoders.items()}
 
-    train_ds = FeatureDataset(
-        patient_ids=train_df.index,
-        bags=train_df.path.values,
-        targets=train_targets,
-        instances_per_bag=cfg.dataset.instances_per_bag,
-        augmentations=cfg.dataset.augmentations.train,
-    )
-
+    if cfg.dataset.cache_dir and (dataset_cache_dir := Path(cfg.dataset.cache_dir)).exists():
+        assert cfg.dataset.batch_size == 1, "batch_size must be 1 when using cached dataset"
+        logger.info(f"Using cached dataset from {dataset_cache_dir}")
+        train_ds = CachedFeatureDataset(
+            patient_ids=train_df.index,
+            targets=train_targets,
+            cache_dir=dataset_cache_dir,
+        )
+    else:
+        train_ds = FeatureDataset(
+            patient_ids=train_df.index,
+            bags=train_df.path.values,
+            targets=train_targets,
+            instances_per_bag=cfg.dataset.instances_per_bag,
+            augmentations=cfg.dataset.augmentations.train,
+        )
     train_dl = DataLoader(
         train_ds,
         batch_size=cfg.dataset.batch_size,
@@ -368,7 +387,7 @@ def train_fold(
         crossval_fold=crossval_fold,
         crossval_id=crossval_id,
         run_prefix=run_prefix,
-        callbacks=[model_checkpoint_callback],
+        callbacks=[model_checkpoint_callback, UpdateEpochInDatasetCallback(train_ds)],
     )
     print(model)
 
