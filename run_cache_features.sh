@@ -30,10 +30,10 @@ set -e
 # echo ====================
 # env/bin/python -m histaug.train.cache dataset=_tcga_brca augmentations@dataset.augmentations=all settings.feature_extractor=bt dataset.num_workers=16
 echo ====================
-echo RUNNING: env/bin/python -m histaug.train.cache dataset=_tcga_brca augmentations@dataset.augmentations=all settings.feature_extractor=swav dataset.num_workers=16
+echo RUNNING: env/bin/python -m histaug.train.cache dataset=_tcga_brca augmentations@dataset.augmentations=all settings.feature_extractor=swav dataset.num_workers=32
 echo ====================
-env/bin/python -m histaug.train.cache dataset=_tcga_brca augmentations@dataset.augmentations=all settings.feature_extractor=swav dataset.num_workers=16
+env/bin/python -m histaug.train.cache dataset=_tcga_brca augmentations@dataset.augmentations=all settings.feature_extractor=swav dataset.num_workers=32
 echo ====================
-echo RUNNING: env/bin/python -m histaug.train.cache dataset=_tcga_brca augmentations@dataset.augmentations=all settings.feature_extractor=dino_p16 dataset.num_workers=16
+echo RUNNING: env/bin/python -m histaug.train.cache dataset=_tcga_brca augmentations@dataset.augmentations=all settings.feature_extractor=dino_p16 dataset.num_workers=32
 echo ====================
-env/bin/python -m histaug.train.cache dataset=_tcga_brca augmentations@dataset.augmentations=all settings.feature_extractor=dino_p16 dataset.num_workers=16
+env/bin/python -m histaug.train.cache dataset=_tcga_brca augmentations@dataset.augmentations=all settings.feature_extractor=dino_p16 dataset.num_workers=32

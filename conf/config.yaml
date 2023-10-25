@@ -9,7 +9,7 @@ settings:
   feature_extractor: ctranspath
   feature_dim: 768
   metadata_dir: /metadata
-  features_dir: /data/histaug/results
+  features_dir: /data/histaug/features
   cache_dir: /data/histaug/cache
   folds_dir: /data/histaug/folds
 

@@ -5,7 +5,7 @@ import shutil
 import libtmux
 import hashlib
 
-GPUS = [0, 1, 4, 5, 6, 7]
+GPUS = [0, 1, 2, 3, 4, 5, 6, 7]
 
 
 def run(dry_run: bool = False, check_wandb: bool = True):
@@ -23,11 +23,9 @@ def run(dry_run: bool = False, check_wandb: bool = True):
 
     # Generate configs
     configs = []
-    # for augmentations in ("none", "macenko_patchwise", "simple_rotate", "all"):
-    for augmentations in ("none", "macenko_patchwise", "simple_rotate"):
-        # for experiment in ("brca_subtype",):
+    for augmentations in ("none", "macenko_patchwise", "macenko_slidewise", "simple_rotate", "all"):
         for experiment in ("brca_subtype", "brca_CDH1", "brca_TP53", "brca_PIK3CA"):
-            for model in ("attmil", "map"):
+            for model in ("attmil", "map", "transformer"):
                 for feature_extractor in (
                     "ctranspath",
                     "owkin",
@@ -39,6 +37,8 @@ def run(dry_run: bool = False, check_wandb: bool = True):
                     "swav",
                     "dino_p16",
                 ):
+                    if augmentations == "all" and feature_extractor in ("swav", "dino_p16"):
+                        continue  # those are not yet cached
                     for seed in range(5):
                         config = {
                             "+experiment": experiment,
@@ -107,9 +107,11 @@ def run(dry_run: bool = False, check_wandb: bool = True):
                 f.write("#!/bin/bash\n")
                 for i, (config, path) in enumerate(configs, 1):
                     cmd = f"CUDA_VISIBLE_DEVICES={gpu} python -m histaug.train.oneval {' '.join(f'{k}={v}' for k, v in config.items())}"
+                    f.write("echo\n")
                     f.write("echo ========================================\n")
                     f.write(f"echo Running [{i}/{len(configs)}] {path.stem}: {cmd}\n")
                     f.write("echo ========================================\n")
+                    f.write("echo\n")
                     f.write(f"{cmd} 2>&1 | tee -a {logs_dir / path.with_suffix('.txt').name}\n")
                     f.write("status=${PIPESTATUS}\n")
                     f.write(f"if [ $status -eq 0 ]; then\n")
