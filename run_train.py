@@ -23,7 +23,8 @@ def run(dry_run: bool = False, check_wandb: bool = True):
 
     # Generate configs
     configs = []
-    for augmentations in ("none", "macenko_patchwise", "macenko_slidewise", "simple_rotate", "all"):
+    for augmentations in ("none", "macenko_patchwise", "macenko_slidewise", "all"):
+        # for augmentations in ("none", "macenko_patchwise", "macenko_slidewise", "all", "simple_rotate"):
         for experiment in ("brca_subtype", "brca_CDH1", "brca_TP53", "brca_PIK3CA"):
             for model in ("attmil", "map", "transformer"):
                 for feature_extractor in (
@@ -37,8 +38,6 @@ def run(dry_run: bool = False, check_wandb: bool = True):
                     "swav",
                     "dino_p16",
                 ):
-                    if augmentations == "all" and feature_extractor in ("swav", "dino_p16"):
-                        continue  # those are not yet cached
                     for seed in range(5):
                         config = {
                             "+experiment": experiment,
@@ -69,7 +68,7 @@ def run(dry_run: bool = False, check_wandb: bool = True):
             overrides = set(f"{k}={v}" for k, v in config.items())
             for run in runs:
                 if set(run.config.get("overrides", "").split(" ")) == overrides:
-                    logger.debug(f"Config {' '.join(f'{k}={v}' for k, v in config.items())} already exists on wandb")
+                    # logger.debug(f"Config {' '.join(f'{k}={v}' for k, v in config.items())} already exists on wandb")
                     return True
             return False
 
@@ -125,7 +124,7 @@ def run(dry_run: bool = False, check_wandb: bool = True):
 
         # Run scripts using tmux
         server = libtmux.Server()
-        session = server.new_session("histaug-experiments")
+        session = server.new_session("histaug-train")
         for worker, gpu in enumerate(GPUS):
             window = session.new_window(window_name=f"worker{worker}-gpu{gpu}")
             # send keys to window

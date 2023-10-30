@@ -33,7 +33,7 @@ class Macenko(nn.Module):
     def forward_image(self, image: torch.Tensor) -> torch.Tensor:
         try:
             Inorm, H, E = self.normalizer.normalize((image * 255).type(torch.uint8))
-            return Inorm.type_as(image) / 255
+            return Inorm.type_as(image) / 255.0
         except FullyTransparentException as e:
             logger.warning(
                 f"Attempting to Macenko normalize fully transparent image ({str(e)}). Returning original image."
@@ -46,6 +46,13 @@ class Macenko(nn.Module):
 
 def EnlargeAndCenterCrop(zoom_factor: Union[float, int] = 2, patch_size=PATCH_SIZE):
     return T.Compose([T.Resize(int(zoom_factor * patch_size), antialias=True), T.CenterCrop(patch_size)])
+
+
+def RotateRandomAngle():
+    """Rotate by 0, 90, 180, or 270 degrees plus a random angle between 10 and 80 degrees)."""
+    return T.Lambda(
+        lambda img: TF.rotate(img, angle=(torch.randint(0, 4, (1,)) * 90 + torch.randint(10, 80, (1,))).item())
+    )
 
 
 class Augmentations(nn.Module):
@@ -104,12 +111,11 @@ _unloaded_augmentations: Mapping[str, Callable[[], Any]] = {
     "rotate 90°": lambda: partial(TF.rotate, angle=90),
     "rotate 180°": lambda: partial(TF.rotate, angle=180),
     "rotate 270°": lambda: partial(TF.rotate, angle=270),
-    "rotate random angle": lambda: T.Lambda(
-        lambda img: TF.rotate(img, angle=(torch.randint(0, 4, (1,)) * 90 + torch.randint(10, 80, (1,))).item())
-    ),  # rotate by 0, 90, 180, or 270 degrees plus a random angle between 10 and 80 degrees)
+    "rotate random angle": lambda: RotateRandomAngle(),
     "zoom 1.5x": lambda: EnlargeAndCenterCrop(1.5),
     "zoom 1.75x": lambda: EnlargeAndCenterCrop(1.75),
     "zoom 2x": lambda: EnlargeAndCenterCrop(2),
+    "rotate random angle and zoom 1.5x": lambda: T.Compose([RotateRandomAngle(), EnlargeAndCenterCrop(1.5)]),
     "affine": lambda: T.RandomAffine(degrees=10, translate=(0.2, 0.2), scale=(0.8, 1.2), shear=10),
     "warp perspective": lambda: T.RandomPerspective(p=1.0, distortion_scale=0.2, fill=0),
     "jigsaw": lambda: K.RandomJigsaw(p=1.0, grid=(4, 4), same_on_batch=True),
@@ -128,8 +134,15 @@ _unloaded_augmentations: Mapping[str, Callable[[], Any]] = {
 }
 
 
-def load_augmentations(keys: Optional[Iterable[str]] = None) -> Augmentations:
-    return Augmentations({k: v() for k, v in _unloaded_augmentations.items() if (not keys or k in keys)})
+def load_augmentations(
+    keys: Optional[Iterable[str]] = None,
+    excluded_keys: Sequence[str] = [
+        "rotate random angle and zoom 1.5x"  # exclude this because this is just for an ablation study
+    ],
+) -> Augmentations:
+    return Augmentations(
+        {k: v() for k, v in _unloaded_augmentations.items() if ((not keys or k in keys) and k not in excluded_keys)}
+    )
 
 
 def augmentation_names() -> Sequence[str]:

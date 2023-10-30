@@ -52,7 +52,7 @@ if __name__ == "__main__":
         "--split", type=str, choices=["train_nonorm", "train", "validate"], default="train_nonorm", help="Dataset split"
     )
     parser.add_argument(
-        "--output", type=Path, default="/data/histaug/results/kather100k", help="Path to the output folder"
+        "--output", type=Path, default="/data/histaug/features/kather100k", help="Path to the output folder"
     )
     parser.add_argument(
         "--batch-size",
@@ -81,11 +81,11 @@ if __name__ == "__main__":
         ds, batch_size=args.batch_size, shuffle=True, num_workers=8, pin_memory=True
     )  # shuffle is true because image augmentations are done across the whole batch (i.e. same rotation angle for all images per batch)
     model = load_feature_extractor(args.model)
-    augmentations = load_augmentations()
+    augmentations = load_augmentations(excluded_keys=[])
 
     logger.info("Processing dataset")
     feats, feats_augs, labels, files = process_dataset(
-        loader, model, augmentations, device=args.device, n_batches=args.n_batches
+        loader, model, augmentations, device=args.device, n_batches=args.n_batches or (len(ds) // args.batch_size)
     )
 
     logger.info(f"Saving features to {output_folder}")
