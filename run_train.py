@@ -23,8 +23,8 @@ def run(dry_run: bool = False, check_wandb: bool = True):
 
     # Generate configs
     configs = []
-    for augmentations in ("none", "macenko_patchwise", "macenko_slidewise", "all"):
-        # for augmentations in ("none", "macenko_patchwise", "macenko_slidewise", "all", "simple_rotate"):
+    # for augmentations in ("none", "macenko_patchwise", "macenko_slidewise", "all"):
+    for augmentations in ("none", "macenko_patchwise", "macenko_slidewise", "all", "simple_rotate"):
         for experiment in ("brca_subtype", "brca_CDH1", "brca_TP53", "brca_PIK3CA"):
             for model in ("attmil", "map", "transformer"):
                 for feature_extractor in (

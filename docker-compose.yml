@@ -20,3 +20,4 @@ services:
       - "${HOST_APP_FOLDER:-~/histaug}:/app"
       - "/mnt/isilon1/georg/data:/data"
       - "/mnt/isilon1/georg/metadata:/metadata"
+      - "/raid/gw66:/raid"
