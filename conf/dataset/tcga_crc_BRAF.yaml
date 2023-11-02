@@ -1,0 +1,10 @@
+defaults:
+  - _tcga_crc
+  - _self_
+
+name: tcga_crc_${.targets[0].column}
+targets:
+  - column: BRAF
+    type: categorical
+    classes: ["0", "1"]
+    weights: 

@@ -1,0 +1,10 @@
+defaults:
+  - _cptac_crc
+  - _self_
+
+name: cptac_crc_${.targets[0].column}
+targets:
+  - column: MSI
+    type: categorical
+    classes: ["MSI", "MSS"]
+    weights: 

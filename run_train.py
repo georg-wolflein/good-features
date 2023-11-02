@@ -23,9 +23,10 @@ def run(dry_run: bool = False, check_wandb: bool = True):
 
     # Generate configs
     configs = []
-    # for augmentations in ("none", "macenko_patchwise", "macenko_slidewise", "all"):
-    for augmentations in ("none", "macenko_patchwise", "macenko_slidewise", "all", "simple_rotate"):
-        for experiment in ("brca_subtype", "brca_CDH1", "brca_TP53", "brca_PIK3CA"):
+    # for augmentations in ("none", "macenko_patchwise", "macenko_slidewise", "all", "simple_rotate"):
+    for augmentations in ("none", "macenko_patchwise", "macenko_slidewise"):
+        # for experiment in ("brca_subtype", "brca_CDH1", "brca_TP53", "brca_PIK3CA"):
+        for experiment in ("crc_MSI", "crc_KRAS", "crc_BRAF", "crc_SMAD4"):
             for model in ("attmil", "map", "transformer"):
                 for feature_extractor in (
                     "ctranspath",
@@ -124,7 +125,7 @@ def run(dry_run: bool = False, check_wandb: bool = True):
 
         # Run scripts using tmux
         server = libtmux.Server()
-        session = server.new_session("histaug-train")
+        session = server.new_session("train")
         for worker, gpu in enumerate(GPUS):
             window = session.new_window(window_name=f"worker{worker}-gpu{gpu}")
             # send keys to window

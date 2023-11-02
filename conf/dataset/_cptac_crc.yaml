@@ -1,0 +1,8 @@
+name: cptac_crc
+clini_tables: ["${settings.metadata_dir}/CPTAC-CRC_CLINI.csv"]
+slide_tables: ["${settings.metadata_dir}/CPTAC-CRC_SLIDE.csv"]
+feature_dirs: ["${settings.features_dir}/CPTAC-CRC/${settings.feature_extractor}"]
+folds_table: "${settings.folds_dir}/${.name}.csv"
+cache_dir: "/data/histaug/cache/CPTAC-CRC/${settings.feature_extractor}/${.augmentations.name}"
+filename_col: FILENAME
+patient_col: PATIENT
