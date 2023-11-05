@@ -12,6 +12,7 @@ settings:
   features_dir: /data/histaug/features
   cache_dir: /data/histaug/cache
   folds_dir: /data/histaug/folds
+  camelyon17_fold: 0
 
 name: ${dataset.name}-${model_name:${model._target_}}-${settings.feature_extractor}
 project: histaug

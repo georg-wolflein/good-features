@@ -23,10 +23,10 @@ def run(dry_run: bool = False, check_wandb: bool = True):
 
     # Generate configs
     configs = []
-    # for augmentations in ("none", "macenko_patchwise", "macenko_slidewise", "all", "simple_rotate"):
-    for augmentations in ("none", "macenko_patchwise", "macenko_slidewise"):
-        # for experiment in ("brca_subtype", "brca_CDH1", "brca_TP53", "brca_PIK3CA"):
-        for experiment in ("crc_MSI", "crc_KRAS", "crc_BRAF", "crc_SMAD4"):
+    # for experiment in ("brca_subtype", "brca_CDH1", "brca_TP53", "brca_PIK3CA"):
+    for experiment in ("crc_MSI", "crc_KRAS", "crc_BRAF", "crc_SMAD4", "camelyon17_lymph"):
+        # for augmentations in ("none", "macenko_patchwise", "macenko_slidewise", "all", "simple_rotate"):
+        for augmentations in ("none", "macenko_patchwise", "macenko_slidewise"):
             for model in ("attmil", "map", "transformer"):
                 for feature_extractor in (
                     "ctranspath",
@@ -47,6 +47,10 @@ def run(dry_run: bool = False, check_wandb: bool = True):
                             "model": model,
                             "seed": seed,
                         }
+                        if "camelyon" in experiment:
+                            config["settings.camelyon17_fold"] = seed
+                            config["early_stopping.metric"] = "val/${dataset.targets[0].column}/auroc"
+                            config["early_stopping.goal"] = "max"
                         configs.append(config)
 
     logger.info(f"Generated {len(configs)} configs")

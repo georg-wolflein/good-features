@@ -1,0 +1,15 @@
+name: camelyon17_train${settings.camelyon17_fold}_${.targets[0].column}
+
+clini_tables: ["${settings.metadata_dir}/CAMELYON17_${settings.camelyon17_fold}_train_CLINI.csv"]
+slide_tables: ["${settings.metadata_dir}/CAMELYON17_SLIDE.csv"]
+feature_dirs: ["${settings.features_dir}/CAMELYON17/${settings.feature_extractor}"]
+folds_table: "${settings.folds_dir}/${.name}.csv"
+cache_dir: "/data/histaug/cache/${.name}/${settings.feature_extractor}/${.augmentations.name}"
+filename_col: FILENAME
+patient_col: PATIENT
+
+targets:
+  - column: lymph_status
+    type: categorical
+    classes: ["negative", "itc", "micro", "macro"]
+    weights: 

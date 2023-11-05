@@ -1,0 +1,4 @@
+# @package _global_
+defaults:
+  - override /dataset@dataset: camelyon17_train_lymph_status
+  - override /dataset@test.dataset: camelyon17_test_lymph_status
