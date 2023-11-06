@@ -23,8 +23,8 @@ RUN apt update && \
 # OpenGL is needed for OpenCV
 RUN apt update && \
     apt install -y libgl1-mesa-glx vim && \
-    && apt clean \
-    && rm -rf /var/lib/apt/lists/*
+    apt clean && \
+    rm -rf /var/lib/apt/lists/*
 
 VOLUME /app
 VOLUME /data
