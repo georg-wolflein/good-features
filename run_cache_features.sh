@@ -46,3 +46,7 @@ echo RUNNING: env/bin/python -m histaug.train.cache dataset=_tcga_crc augmentati
 echo ====================
 env/bin/python -m histaug.train.cache dataset=_tcga_crc augmentations@dataset.augmentations=simple_rotate settings.feature_extractor=dino_p16 dataset.num_workers=16 dataset.cache_dir='/raid/histaug/cache/TCGA-CRC/${settings.feature_extractor}/${.augmentations.name}'
 
+echo ====================
+echo RUNNING: env/bin/python -m histaug.train.cache dataset=_tcga_crc augmentations@dataset.augmentations=simple_rotate settings.feature_extractor=vits dataset.num_workers=16 dataset.cache_dir='/raid/histaug/cache/TCGA-CRC/${settings.feature_extractor}/${.augmentations.name}'
+echo ====================
+env/bin/python -m histaug.train.cache dataset=_tcga_crc augmentations@dataset.augmentations=simple_rotate settings.feature_extractor=vits dataset.num_workers=16 dataset.cache_dir='/raid/histaug/cache/TCGA-CRC/${settings.feature_extractor}/${.augmentations.name}'

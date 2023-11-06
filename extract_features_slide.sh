@@ -29,8 +29,7 @@ CMDS=(
     # "env/bin/python -m histaug.extract_features.slide_dataset --dataset $dataset --output $output --model $model --start 800"
 )
 
-# session="extract-$model"
-session="extract-cptac-brca"
+session="extract"
 
 # Check if session exists
 tmux has-session -t $session 2>/dev/null

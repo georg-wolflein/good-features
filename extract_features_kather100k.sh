@@ -1,6 +1,6 @@
 #!/bin/bash
 
-MODELS=(ctranspath swin retccl resnet50 owkin vit bt swav dino_p16)
+MODELS=(ctranspath swin retccl resnet50 owkin vit bt swav dino_p16 vits)
 # MODELS=(bt swav dino_p16 dino_p8)
 # MODELS=(bt swav)
 GPUS=(0 1 2 3 4 5 6 7)

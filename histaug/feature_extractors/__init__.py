@@ -3,6 +3,7 @@ from torch import nn
 import torch
 from torchvision import transforms as T
 from typing import Callable, Optional
+import timm
 
 from .ctranspath import CTransPath
 from .retccl import RetCCL
@@ -41,7 +42,7 @@ class SwinTransformer(nn.Module):
         return self.model(x)
 
 
-class ViT(nn.Module):
+class ViTB(nn.Module):
     """ViT-B feature extractor."""
 
     def __init__(self, pretrained: bool = True):
@@ -64,6 +65,17 @@ class ViT(nn.Module):
         return feats
 
 
+class ViTS(nn.Module):
+    """ViT-S feature extractor."""
+
+    def __init__(self, pretrained: bool = True):
+        super().__init__()
+        self.model = timm.create_model("vit_small_patch16_224.augreg_in1k", pretrained=pretrained, num_classes=0).eval()
+
+    def forward(self, x):
+        return self.model.forward(x)
+
+
 class FeatureExtractor(nn.Module):
     def __init__(self, model: nn.Module, transform: Callable[[torch.Tensor], torch.Tensor], name: Optional[str] = None):
         super().__init__()
@@ -78,6 +90,7 @@ class FeatureExtractor(nn.Module):
 
 _imagenet_transform = T.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD)
 _lunit_transform = T.Normalize(mean=LUNIT_MEAN, std=LUNIT_STD)
+_vits_transform = T.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
 
 FEATURE_EXTRACTORS = {
     "ctranspath": lambda: FeatureExtractor(CTransPath(), name="ctranspath", transform=_imagenet_transform),
@@ -85,7 +98,7 @@ FEATURE_EXTRACTORS = {
     "resnet50": lambda: FeatureExtractor(ResNet50(), name="resnet50", transform=_imagenet_transform),
     "swin": lambda: FeatureExtractor(SwinTransformer(), name="swin", transform=_imagenet_transform),
     "owkin": lambda: FeatureExtractor(Owkin(), name="owkin", transform=_imagenet_transform),
-    "vit": lambda: FeatureExtractor(ViT(), name="vit", transform=_imagenet_transform),
+    "vit": lambda: FeatureExtractor(ViTB(), name="vit", transform=_imagenet_transform),
     "bt": lambda: FeatureExtractor(
         lunit_resnet50(key="BT", pretrained=True, progress=True), name="bt", transform=_lunit_transform
     ),
@@ -101,6 +114,7 @@ FEATURE_EXTRACTORS = {
     "dino_p8": lambda: FeatureExtractor(
         lunit_vit_small(key="DINO_p8", pretrained=True, progress=True), name="dino_p8", transform=_lunit_transform
     ),
+    "vits": lambda: FeatureExtractor(ViTS(), name="vits", transform=_vits_transform),
 }
 
 

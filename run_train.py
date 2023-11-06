@@ -38,6 +38,7 @@ def run(dry_run: bool = False, check_wandb: bool = True):
                     "bt",
                     "swav",
                     "dino_p16",
+                    "vits",
                 ):
                     for seed in range(5):
                         config = {
@@ -49,7 +50,7 @@ def run(dry_run: bool = False, check_wandb: bool = True):
                         }
                         if "camelyon" in experiment:
                             config["settings.camelyon17_fold"] = seed
-                            config["early_stopping.metric"] = "val/${dataset.targets[0].column}/auroc"
+                            config["early_stopping.metric"] = "'val/${dataset.targets[0].column}/auroc'"
                             config["early_stopping.goal"] = "max"
                         configs.append(config)
 
