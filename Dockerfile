@@ -17,8 +17,8 @@ RUN apt update && \
     update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1 && \
     update-alternatives --install /usr/bin/python python /usr/bin/python3.9 1 && \
     update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1 && \
-    && apt clean \
-    && rm -rf /var/lib/apt/lists/*
+    apt clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # OpenGL is needed for OpenCV
 RUN apt update && \
