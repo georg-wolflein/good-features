@@ -75,9 +75,9 @@ def compare_auroc_diffs(runs_a, runs_b, bootstraps, column, classes):
 def compare_bootstraps(augmentation_a, augmentation_b):
     logger.info("Loading runs...")
     api = wandb.Api()
-    runs = list(api.runs("histaug"))
+    runs = list(api.runs("histaug", order="+created_at", per_page=1000))
     runs = filter_runs(runs, {"state": "finished"})
-    datasets = [*[f"tcga_brca_{target}" for target in ["subtype", "CDH1", "PIK3CA", "TP53"]]]  # TODO: add other targets
+    targets = ["BRAF", "CDH1", "KRAS", "MSI", "PIK3CA", "SMAD4", "TP53", "lymph", "subtype"]
     feature_extractors = ["ctranspath", "swin", "owkin", "vit", "resnet50", "retccl", "bt", "swav", "dino_p16"]
     models = ["Transformer", "MeanAveragePooling", "AttentionMIL"]
 
@@ -86,18 +86,18 @@ def compare_bootstraps(augmentation_a, augmentation_b):
 
     configs = []
 
-    for dataset in datasets:
+    for target in targets:
         for feature_extractor in feature_extractors:
             for model in models:
-                configs.append((dataset, feature_extractor, model))
+                configs.append((target, feature_extractor, model))
 
     results = []
-    for dataset, feature_extractor, model in (pbar := tqdm(configs)):
-        pbar.set_description(f"{dataset} {feature_extractor} {model}")
+    for target, feature_extractor, model in (pbar := tqdm(configs)):
+        pbar.set_description(f"{target} {feature_extractor} {model}")
         filtered_runs = [
             run
             for run in runs
-            if run.config["dataset"]["name"] == dataset
+            if run.config["dataset"]["targets"][0]["column"] == target
             and run.config["settings"]["feature_extractor"] == feature_extractor
             and run.config["model"]["_target_"] == f"histaug.train.models.{model}"
         ]
