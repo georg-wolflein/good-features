@@ -4,8 +4,11 @@ import json
 import shutil
 import libtmux
 import hashlib
+from tqdm import tqdm
 
 GPUS = [0, 1, 2, 3, 4, 5, 6, 7]
+
+IGNORE_CONFIG_KEYS = ["early_stopping.metric", "early_stopping.goal"]
 
 
 def run(dry_run: bool = False, check_wandb: bool = True):
@@ -26,7 +29,10 @@ def run(dry_run: bool = False, check_wandb: bool = True):
     # for experiment in ("brca_subtype", "brca_CDH1", "brca_TP53", "brca_PIK3CA"):
     for experiment in ("crc_MSI", "crc_KRAS", "crc_BRAF", "crc_SMAD4", "camelyon17_lymph"):
         # for augmentations in ("none", "macenko_patchwise", "macenko_slidewise", "all", "simple_rotate"):
-        for augmentations in ("none", "macenko_patchwise", "macenko_slidewise"):
+        augs = ("none", "macenko_patchwise", "macenko_slidewise")
+        if "crc" in experiment:
+            augs += ("simple_rotate",)
+        for augmentations in augs:
             for model in ("attmil", "map", "transformer"):
                 for feature_extractor in (
                     "ctranspath",
@@ -38,7 +44,7 @@ def run(dry_run: bool = False, check_wandb: bool = True):
                     "bt",
                     "swav",
                     "dino_p16",
-                    "vits",
+                    # "vits",
                 ):
                     for seed in range(5):
                         config = {
@@ -68,19 +74,20 @@ def run(dry_run: bool = False, check_wandb: bool = True):
         import wandb
 
         api = wandb.Api()
-        runs = [run for run in api.runs("histaug") if run.state == "finished"]
 
-        def run_exists_for_config(config):
-            overrides = set(f"{k}={v}" for k, v in config.items())
-            for run in runs:
-                if set(run.config.get("overrides", "").split(" ")) == overrides:
-                    # logger.debug(f"Config {' '.join(f'{k}={v}' for k, v in config.items())} already exists on wandb")
-                    return True
-            return False
-
-        configs = [config for config in configs if not run_exists_for_config(config)]
+        runs = (run for run in api.runs("histaug", order="+created_at", per_page=1000) if run.state == "finished")
+        for run in tqdm(runs, desc="Checking wandb"):
+            run_overrides = {k: v for (k, v) in [x.split("=") for x in run.config.get("overrides", "").split(" ")]}
+            configs = [
+                config
+                for config in configs
+                if not all(
+                    run_overrides.get(k, None) == str(v)
+                    for k, v in config.items()
+                    if k not in IGNORE_CONFIG_KEYS and v is not None
+                )
+            ]
         logger.info(f"Removed configs that were already completed on wandb; {len(configs)} remaining")
-
     else:
         # Remove already completed tasks
         for path in success_dir.glob("*.json"):
@@ -90,7 +97,11 @@ def run(dry_run: bool = False, check_wandb: bool = True):
                 configs.remove(config)
         logger.info(f"Removed configs that were already completed; {len(configs)} remaining")
 
-    if not dry_run:
+    if dry_run:
+        for config in configs:
+            print(" ".join(f"{k}={v}" for k, v in config.items()))
+        logger.info(f"Total: {len(configs)} configs")
+    else:
         # Generate task files
         configs_and_paths = []
         for config in configs:

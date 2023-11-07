@@ -10,7 +10,7 @@ settings:
   feature_dim: 768
   metadata_dir: /metadata
   features_dir: /data/histaug/features
-  cache_dir: /data/histaug/cache
+  cache_dir: /raid/histaug/cache
   folds_dir: /data/histaug/folds
   camelyon17_fold: 0
 
