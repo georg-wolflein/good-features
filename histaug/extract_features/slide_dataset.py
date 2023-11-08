@@ -75,7 +75,7 @@ if __name__ == "__main__":
         help="Batch size with which to load the dataset and apply augmentations (should not be too large because the same augmentation is applied to all images in a batch)",
     )
     parser.add_argument(
-        "--output", type=Path, default="/data/histaug/results/TCGA-BRCA-DX", help="Path to the output folder"
+        "--output", type=Path, default="/data/histaug/features/TCGA-BRCA-DX", help="Path to the output folder"
     )
     parser.add_argument(
         "--model",

@@ -29,10 +29,7 @@ def run(dry_run: bool = False, check_wandb: bool = True):
     # for experiment in ("brca_subtype", "brca_CDH1", "brca_TP53", "brca_PIK3CA"):
     for experiment in ("crc_MSI", "crc_KRAS", "crc_BRAF", "crc_SMAD4", "camelyon17_lymph"):
         # for augmentations in ("none", "macenko_patchwise", "macenko_slidewise", "all", "simple_rotate"):
-        augs = ("none", "macenko_patchwise", "macenko_slidewise")
-        if "crc" in experiment:
-            augs += ("simple_rotate",)
-        for augmentations in augs:
+        for augmentations in ("none", "macenko_patchwise", "macenko_slidewise", "simple_rotate"):
             for model in ("attmil", "map", "transformer"):
                 for feature_extractor in (
                     "ctranspath",

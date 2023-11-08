@@ -18,15 +18,18 @@ model="$1" # "ctranspath" "swin" "retccl" "resnet50" "owkin" "vit"
 dataset="/data/shiprec/TCGA-CRC"
 output="/data/histaug/features/TCGA-CRC"
 # dataset="/data/shiprec/CPTAC-CRC"
-# output="/data/histaug/results/CPTAC-CRC"
+# output="/data/histaug/features/CPTAC-CRC"
 
 GPUS=("${@:2}")
 CMDS=(
     "env/bin/python -m histaug.extract_features.slide_dataset --dataset $dataset --output $output --model $model"
     # "env/bin/python -m histaug.extract_features.slide_dataset --dataset $dataset --output $output --model $model --aug Macenko"
-    # "env/bin/python -m histaug.extract_features.slide_dataset --dataset $dataset --output $output --model $model --start 0 --end 400"
-    # "env/bin/python -m histaug.extract_features.slide_dataset --dataset $dataset --output $output --model $model --start 400 --end 800"
-    # "env/bin/python -m histaug.extract_features.slide_dataset --dataset $dataset --output $output --model $model --start 800"
+    # "env/bin/python -m histaug.extract_features.slide_dataset --dataset $dataset --output $output --model $model --start 0 --end 300"
+    # "env/bin/python -m histaug.extract_features.slide_dataset --dataset $dataset --output $output --model $model --start 300 --end 600"
+    # "env/bin/python -m histaug.extract_features.slide_dataset --dataset $dataset --output $output --model $model --start 600 --end 900"
+    # "env/bin/python -m histaug.extract_features.slide_dataset --dataset $dataset --output $output --model $model --start 900"
+    # "env/bin/python -m histaug.extract_features.slide_dataset --dataset $dataset --output $output --model $model --start 0 --end 300"
+    # "env/bin/python -m histaug.extract_features.slide_dataset --dataset $dataset --output $output --model $model --start 300"
 )
 
 session="extract"
