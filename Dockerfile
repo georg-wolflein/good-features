@@ -26,6 +26,12 @@ RUN apt update && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
 
+# Install TeX for matplotlib
+RUN apt update && \
+    apt install -y dvipng texlive-latex-extra texlive-fonts-recommended cm-super && \
+    apt clean && \
+    rm -rf /var/lib/apt/lists/*
+
 VOLUME /app
 VOLUME /data
 VOLUME /metadata

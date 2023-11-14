@@ -343,6 +343,7 @@ def train_fold(
             cache_dir=dataset_cache_dir,
         )
     else:
+        logger.info(f"Not using cached dataset; empty {cfg.dataset.cache_dir} directory")
         train_ds = FeatureDataset(
             patient_ids=train_df.index,
             bags=train_df.path.values,

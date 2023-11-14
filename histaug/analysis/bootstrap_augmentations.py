@@ -73,12 +73,12 @@ def compute_auroc_diffs(runs_a, runs_b, n_bootstraps: int, column, classes):
     lambda augmentation_a, augmentation_b, *args, **kwargs: f"bootstrapped_augmentations_{augmentation_a}_vs_{augmentation_b}"
 )
 def compare_bootstraps(augmentation_a, augmentation_b):
-    logger.info("Loading runs...")
+    logger.info(f"Loading runs for {augmentation_a} vs {augmentation_b}...")
     api = wandb.Api()
     runs = list(api.runs("histaug", order="+created_at", per_page=1000))
     runs = filter_runs(runs, {"state": "finished"})
     targets = ["BRAF", "CDH1", "KRAS", "MSI", "PIK3CA", "SMAD4", "TP53", "lymph", "subtype"]
-    feature_extractors = ["ctranspath", "swin", "owkin", "vit", "resnet50", "retccl", "bt", "swav", "dino_p16"]
+    feature_extractors = ["ctranspath", "swin", "owkin", "vit", "resnet50", "retccl", "bt", "swav", "dino_p16", "vits"]
     models = ["Transformer", "MeanAveragePooling", "AttentionMIL"]
 
     configs = [(model, feature_extractor) for model in models for feature_extractor in feature_extractors]

@@ -3,6 +3,7 @@ clini_tables: ["${settings.metadata_dir}/TCGA-CRC_CLINI.csv"]
 slide_tables: ["${settings.metadata_dir}/TCGA-CRC_SLIDE.csv"]
 feature_dirs: ["${settings.features_dir}/TCGA-CRC/${settings.feature_extractor}"]
 folds_table: "${settings.folds_dir}/${.name}.csv"
-cache_dir: "${settings.cache_dir}/TCGA-CRC/${settings.feature_extractor}/${.augmentations.name}"
+# cache_dir: "${settings.cache_dir}/TCGA-CRC/${settings.feature_extractor}/${.augmentations.name}"
+cache_dir: "/data/histaug/cache/TCGA-CRC/${settings.feature_extractor}/${.augmentations.name}"
 filename_col: FILENAME
 patient_col: PATIENT

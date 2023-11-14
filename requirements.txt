@@ -22,3 +22,4 @@ pytest
 timm
 datasets
 seaborn
+tueplots

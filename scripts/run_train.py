@@ -27,34 +27,29 @@ def run(dry_run: bool = False, check_wandb: bool = True):
     # Generate configs
     configs = []
 
-    # for experiment in ("brca_subtype", "brca_CDH1", "brca_TP53", "brca_PIK3CA", "crc_MSI", "crc_KRAS", "crc_BRAF", "crc_SMAD4", "camelyon17_lymph"):
     for experiment in (
         "brca_subtype",
         "brca_CDH1",
         "brca_TP53",
         "brca_PIK3CA",
+        "camelyon17_lymph",
         "crc_MSI",
         "crc_KRAS",
         "crc_BRAF",
         "crc_SMAD4",
     ):
-        # for augmentations in ("none", "macenko_patchwise", "macenko_slidewise", "all", "simple_rotate"):
-        for augmentations in (
-            "none",
-            "macenko_patchwise",
-            "macenko_slidewise",
-        ):
+        for augmentations in ("none", "macenko_patchwise", "macenko_slidewise", "simple_rotate", "all"):
             for model in ("attmil", "map", "transformer"):
                 for feature_extractor in (
-                    # "ctranspath",
-                    # "owkin",
-                    # "swin",
-                    # "vit",
-                    # "retccl",
-                    # "resnet50",
-                    # "bt",
-                    # "swav",
-                    # "dino_p16",
+                    "ctranspath",
+                    "owkin",
+                    "swin",
+                    "vit",
+                    "retccl",
+                    "resnet50",
+                    "bt",
+                    "swav",
+                    "dino_p16",
                     "vits",
                 ):
                     for seed in range(5):

@@ -3,6 +3,7 @@ import functools
 from pathlib import Path
 import json
 from typing import Union
+from loguru import logger
 
 
 def cached_df(args_to_table_name: callable, cache_dir: Union[Path, str] = Path("/app/results")):
@@ -15,7 +16,9 @@ def cached_df(args_to_table_name: callable, cache_dir: Union[Path, str] = Path("
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             table_name = args_to_table_name(*args, **kwargs)
-            if not (cache_dir / f"{table_name}.csv").exists():
+            if (cache_dir / f"{table_name}.csv").exists():
+                logger.debug(f"Loading {table_name} from cache")
+            else:
                 df = func(*args, **kwargs)
                 df.to_csv(cache_dir / f"{table_name}.csv")
                 with (cache_dir / f"{table_name}.json").open("w") as f:

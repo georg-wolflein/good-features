@@ -27,6 +27,9 @@ RENAME_TARGETS = {
     "SMAD4": "SMAD4",
 }
 RENAME_AUGMENTATIONS = {
+    "rotate random angle": "random rotation",
+}
+RENAME_AUGMENTATION_GROUPS = {
     "none": "Original",
     "Macenko_patchwise": "Macenko (patch)",
     "Macenko_slidewise": "Macenko (slide)",
@@ -36,7 +39,7 @@ RENAME_AUGMENTATIONS = {
 FEATURE_EXTRACTOR_GROUPS = {
     "Swin": ["swin", "ctranspath"],
     "ViT-B": ["vit", "owkin"],
-    "ViT-S": ["dino_p16"],
+    "ViT-S": ["vits", "dino_p16"],
     "ResNet-50": ["resnet50", "retccl", "bt", "swav"],
 }
 TARGET_GROUPS = {

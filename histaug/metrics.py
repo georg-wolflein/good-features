@@ -30,8 +30,13 @@ def mahalanobis_distance(X: torch.Tensor, Y: torch.Tensor) -> torch.Tensor:
     return distances
 
 
-SIMILARITY_METRICS: Dict[str, Metric] = {
-    "cosine": nn.CosineSimilarity(dim=-1),
+class CosineDistance(nn.CosineSimilarity):
+    def forward(self, *args, **kwargs):
+        return 1 - super().forward(*args, **kwargs)
+
+
+DISTANCE_METRICS: Dict[str, Metric] = {
+    "cosine": CosineDistance(dim=-1),
     "manhattan": nn.PairwiseDistance(p=1),
     "euclidean": nn.PairwiseDistance(p=2),
     "mahalanobis": mahalanobis_distance,  # impractical for large datasets
@@ -48,7 +53,7 @@ def compute_dists(feats: TensorLike, feats_augs: Dict[str, TensorLike], metric: 
     feats = ensure_tensor(feats)
     feats_augs = {k: ensure_tensor(v) for k, v in feats_augs.items()}
     if isinstance(metric, str):
-        metric = SIMILARITY_METRICS[metric]
+        metric = DISTANCE_METRICS[metric]
     dists = {aug_name: metric(feats, feats_aug) for aug_name, feats_aug in feats_augs.items()}
     dists = pd.DataFrame(dists)
 
