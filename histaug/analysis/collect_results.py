@@ -6,6 +6,8 @@ from pathlib import Path
 from itertools import product
 from tqdm.contrib.concurrent import process_map
 import numpy as np
+import math
+from functools import reduce, partial
 
 from histaug.utils import cached_df, RunningStats
 
@@ -54,9 +56,9 @@ def load_aurocs():
     return df
 
 
-def compute_norm_diff_auroc(sub_df, show_progress: bool = False):
+def compute_norm_diff_auroc(sub_df, show_progress: bool = False, compare_across: str = "feature_extractor"):
     """Function to compute average offset from best for a given subset of data."""
-    pivot_data = sub_df.pivot(index="seed", columns="feature_extractor", values="test_auroc")
+    pivot_data = sub_df.pivot(index="seed", columns=compare_across, values="test_auroc")
     feature_extractors = pivot_data.columns.values
     seeds = pivot_data.index.values
     combinations = product(*pivot_data.values.T)
@@ -71,55 +73,65 @@ def compute_norm_diff_auroc(sub_df, show_progress: bool = False):
     return {fe: stats.compute() for fe, stats in stats_by_feature_extractor.items()}
 
 
-def compute_norm_diff_auroc_worker(args):
-    target, model, augmentations, sub_data = args
-    result = compute_norm_diff_auroc(sub_data)
-    logger.debug(f"Computed results for {target=}, {model=}, {augmentations=}")
-    return (target, model, augmentations), result
+def compute_norm_diff_auroc_worker(args, compare_across: str = "feature_extractor"):
+    config, sub_data = args
+    result = compute_norm_diff_auroc(sub_data, compare_across=compare_across)
+    logger.debug(f"Computed results for {config}")
+    return config, result
 
 
-@cached_df(lambda *args, **kwargs: f"norm_diff")
-def compute_results_table(test_aurocs: pd.Series, n_workers: int = 32):
+@cached_df(
+    lambda *args, keep_fixed=(
+        "augmentations",
+        "model",
+        "target",
+    ), vary="feature_extractor", **kwargs: f"norm_diff__{vary}__{'_'.join(keep_fixed)}"
+)
+def compute_results_table(
+    test_aurocs: pd.Series,
+    keep_fixed=("augmentations", "model", "target"),
+    vary="feature_extractor",
+    n_workers: int = 32,
+):
     """Compute average offsets from best for each (target, model, augmentation) pair using multiprocessing."""
+    keep_fixed = list(keep_fixed)
     d = test_aurocs.reset_index()
 
-    unique_pairs = d[["target", "model", "augmentations"]].drop_duplicates().values
+    unique_pairs = d[keep_fixed].drop_duplicates().values
 
     # Create a tuple of arguments for each unique pair
     args_list = [
         (
-            target,
-            model,
-            augmentations,
-            d[(d["target"] == target) & (d["model"] == model) & (d["augmentations"] == augmentations)],
+            tuple(config.tolist()),
+            d[reduce(lambda a, b: a & b, [d[col] == value for col, value in zip(keep_fixed, config)])],
         )
-        for target, model, augmentations in unique_pairs
+        for config in unique_pairs
     ]
 
     # Use multiprocessing Pool to compute results in parallel
-    results_list = process_map(
-        compute_norm_diff_auroc_worker, args_list, max_workers=n_workers, tqdm_class=tqdm, desc="Computing results"
-    )
+    worker = partial(compute_norm_diff_auroc_worker, compare_across=vary)
+    results_list = process_map(worker, args_list, max_workers=n_workers, tqdm_class=tqdm, desc="Computing results")
 
     # Convert list of results into dictionary
-    results = {(target, model, augmentations): result for (target, model, augmentations), result in results_list}
+    print(results_list[0])
+    results = {config: result for config, result in results_list}
 
     r = pd.DataFrame(results).map(
         lambda x: {"mean": float("nan"), "std": float("nan")} if isinstance(x, float) and math.isnan(x) else x._asdict()
     )
-    r.index.name = "feature_extractor"
-    r.columns.names = ["target", "model", "augmentations"]
-    r = r.stack(["target", "model", "augmentations"]).apply(pd.Series)
+    r.index.name = vary
+    r.columns.names = keep_fixed
+    r = r.stack(keep_fixed).apply(pd.Series)
     r.columns.names = ["stats"]
-    r = (
-        r.pivot_table(index=["augmentations", "model", "feature_extractor"], columns="target")
-        .reorder_levels([1, 0], axis=1)
-        .sort_index(axis=1)
-    )
-    r
+    r = r.pivot_table(index=keep_fixed, columns=vary).reorder_levels([1, 0], axis=1).sort_index(axis=1)
     return r
 
 
 if __name__ == "__main__":
     df = load_aurocs()
-    r = compute_results_table(df["test_auroc"])
+    r = compute_results_table(
+        df["test_auroc"], keep_fixed=("augmentations", "model", "target"), vary="feature_extractor"
+    )
+    # r = compute_results_table(
+    #     df["test_auroc"], keep_fixed=("augmentations", "feature_extractor", "target"), vary="model"
+    # )
