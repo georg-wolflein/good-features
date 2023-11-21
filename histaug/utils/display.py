@@ -16,19 +16,17 @@ RENAME_FEATURE_EXTRACTORS = {
     "swav": "Lunit-SwAV",
 }
 RENAME_TARGETS = {
-    "subtype": "Subtype",
-    "CDH1": "CDH1",
-    "TP53": "TP53",
-    "PIK3CA": "PIK3CA",
-    "lymph": "LN status",
-    "MSI": "MSI",
-    "KRAS": "KRAS",
-    "BRAF": "BRAF",
-    "SMAD4": "SMAD4",
+    "subtype": "\\breasticon-Subtype",
+    "CDH1": "\\breasticon-CDH1",
+    "TP53": "\\breasticon-TP53",
+    "PIK3CA": "\\breasticon-PIK3CA",
+    "lymph": "\\breasticon-LN status",
+    "MSI": "\\colonicon-MSI",
+    "KRAS": "\\colonicon-KRAS",
+    "BRAF": "\\colonicon-BRAF",
+    "SMAD4": "\\colonicon-SMAD4",
 }
-RENAME_AUGMENTATIONS = {
-    "rotate random angle": "random rotation",
-}
+RENAME_AUGMENTATIONS = {"rotate random angle": "random rotation"}
 RENAME_AUGMENTATION_GROUPS = {
     "none": "Original",
     "Macenko_patchwise": "Macenko (patch)",

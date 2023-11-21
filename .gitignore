@@ -2,7 +2,7 @@
 /wandb/
 /outputs/
 ctranspath.pth
-/figures/
+# /figures/
 /weights/
 /results/*.h5
 /experiment_logs/
