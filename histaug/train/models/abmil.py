@@ -24,7 +24,7 @@ class AttentionMIL(nn.Module):
     def forward(self, feats, coords, mask, *args, **kwargs):
         embeddings = self.encoder(feats)  # B, N, D
         attention = self.attention(embeddings).squeeze(-1)  # B, N
-        attention = attention * mask  # B, N
+        attention = torch.masked_fill(attention, ~mask, -torch.inf)  # B, N
         attention = F.softmax(attention, dim=-1)  # B, N
         embeddings = embeddings * attention.unsqueeze(-1)  # B, N, D
         slide_tokens = embeddings.sum(dim=-2)  # B, D
