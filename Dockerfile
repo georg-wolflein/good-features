@@ -13,7 +13,7 @@ RUN apt update && \
     apt install -y software-properties-common && \
     add-apt-repository ppa:deadsnakes/ppa && \
     apt update && \
-    apt install -y python3.9 python3-pip python3.9-distutils git && \
+    apt install -y python3.9 python3-pip python3.9-distutils python3.9-venv git && \
     update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1 && \
     update-alternatives --install /usr/bin/python python /usr/bin/python3.9 1 && \
     update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1 && \
