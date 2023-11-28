@@ -21,7 +21,7 @@ Deep learning is revolutionising pathology, offering novel opportunities in dise
 - We show that stain normalisation and image augmentations may be omitted without compromising downstream performance.
 
 > [!NOTE]
-> One of the feature extractors we evaluate in our paper is Owkin's [Phikon](https://github.com/owkin/HistoSSLscaling) model. We report results based on the "student" model, which at the time of running our experiments was recommended in their repository. However, their recommendation has since changed to use the "teacher" model instead.
+> One of the feature extractors we evaluate in our paper is Owkin's [Phikon](https://github.com/owkin/HistoSSLscaling) model. We report results based on the "student" variant, which at the time of running our experiments was recommended in their repository. However, their recommendation has since been updated to prefer the "teacher" model instead.
 
 ## Overview
 ![](assets/overview.png)
