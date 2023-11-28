@@ -32,10 +32,9 @@ If you find this useful, please cite:
 
 ```bibtex
 @misc{wolflein2023good,
-    title={A Good Feature Extractor Is All You Need for Weakly Supervised Learning in Histopathology}, 
-    author    = {W\"{o}lflein, Georg and Ferber, Dyke and Meneghetti, Asier Rabasco and El Nahhas, Omar S. M. and Truhn, Daniel and Carrero, Zunamys I. and Harrison, David J. and Arandjelovi\'{c}, Ognjen and Kather, Jakob N.},
-    year={2023},
-    eprint={2311.11772},
-    archivePrefix={arXiv},
+    title   = {A Good Feature Extractor Is All You Need for Weakly Supervised Learning in Histopathology}, 
+    author  = {W\"{o}lflein, Georg and Ferber, Dyke and Meneghetti, Asier Rabasco and El Nahhas, Omar S. M. and Truhn, Daniel and Carrero, Zunamys I. and Harrison, David J. and Arandjelovi\'{c}, Ognjen and Kather, Jakob N.},
+    journal = {arXiv:2311.11772},
+    year    = {2023},
 }
 ```
