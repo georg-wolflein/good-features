@@ -8,6 +8,7 @@ RENAME_FEATURE_EXTRACTORS = {
     "ctranspath": "CTransPath",
     "vit": "ViT-B",
     "owkin": "Phikon",
+    "owkin_teacher": "Phikon (teacher)",
     "vits": "ViT-S",
     "dino_p16": "Lunit-DINO",
     "resnet50": "ResNet-50",
@@ -36,7 +37,7 @@ RENAME_AUGMENTATION_GROUPS = {
 }
 FEATURE_EXTRACTOR_GROUPS = {
     "Swin": ["swin", "ctranspath"],
-    "ViT-B": ["vit", "owkin"],
+    "ViT-B": ["vit", "owkin", "owkin_teacher"],
     "ViT-S": ["vits", "dino_p16"],
     "ResNet-50": ["resnet50", "retccl", "bt", "swav"],
 }

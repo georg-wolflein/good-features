@@ -97,7 +97,10 @@ FEATURE_EXTRACTORS = {
     "retccl": lambda: FeatureExtractor(RetCCL(), name="retccl", transform=_imagenet_transform),
     "resnet50": lambda: FeatureExtractor(ResNet50(), name="resnet50", transform=_imagenet_transform),
     "swin": lambda: FeatureExtractor(SwinTransformer(), name="swin", transform=_imagenet_transform),
-    "owkin": lambda: FeatureExtractor(Owkin(), name="owkin", transform=_imagenet_transform),
+    "owkin": lambda: FeatureExtractor(Owkin(encoder="student"), name="owkin", transform=_imagenet_transform),
+    "owkin_teacher": lambda: FeatureExtractor(
+        Owkin(encoder="teacher"), name="owkin_teacher", transform=_imagenet_transform
+    ),
     "vit": lambda: FeatureExtractor(ViTB(), name="vit", transform=_imagenet_transform),
     "bt": lambda: FeatureExtractor(
         lunit_resnet50(key="BT", pretrained=True, progress=True), name="bt", transform=_lunit_transform
