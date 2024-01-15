@@ -2,7 +2,7 @@ defaults:
   - _camelyon17
   - _self_
 
-name: camelyon17_train${settings.camelyon17_fold}_${.targets[0].column}
+name: camelyon17${settings.dataset_suffix}_train${settings.camelyon17_fold}_${.targets[0].column}
 clini_tables: ["${settings.metadata_dir}/CAMELYON17_${settings.camelyon17_fold}_train_CLINI.csv"]
 targets:
   - column: lymph

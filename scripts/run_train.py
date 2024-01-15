@@ -7,8 +7,9 @@ import hashlib
 from tqdm import tqdm
 
 GPUS = [0, 1, 2, 3, 4, 5, 6, 7]
+GPUS = [6, 7]
 
-IGNORE_CONFIG_KEYS = ["early_stopping.metric", "early_stopping.goal"]
+IGNORE_CONFIG_KEYS = ["early_stopping.metric", "early_stopping.goal", "dataset.num_workers"]
 
 
 def run(dry_run: bool = False, check_wandb: bool = True):
@@ -27,44 +28,58 @@ def run(dry_run: bool = False, check_wandb: bool = True):
     # Generate configs
     configs = []
 
-    for experiment in (
-        "brca_subtype",
-        "brca_CDH1",
-        "brca_TP53",
-        "brca_PIK3CA",
-        "camelyon17_lymph",
-        "crc_MSI",
-        "crc_KRAS",
-        "crc_BRAF",
-        "crc_SMAD4",
-    ):
-        for augmentations in ("none", "macenko_patchwise", "macenko_slidewise", "simple_rotate", "all"):
-            for model in ("attmil", "map", "transformer"):
-                for feature_extractor in (
-                    "ctranspath",
-                    "owkin",
-                    "swin",
-                    "vit",
-                    "retccl",
-                    "resnet50",
-                    "bt",
-                    "swav",
-                    "dino_p16",
-                    "vits",
-                ):
-                    for seed in range(5):
-                        config = {
-                            "+experiment": experiment,
-                            "+feature_extractor": feature_extractor,
-                            "augmentations@dataset.augmentations": augmentations,
-                            "model": model,
-                            "seed": seed,
-                        }
-                        if "camelyon" in experiment:
-                            config["settings.camelyon17_fold"] = seed
-                            config["early_stopping.metric"] = "'val/${dataset.targets[0].column}/auroc'"
-                            config["early_stopping.goal"] = "max"
-                        configs.append(config)
+    for magnification in ("low", "high"):
+        for experiment in (
+            (
+                "brca_subtype",
+                "brca_CDH1",
+                "brca_TP53",
+                "brca_PIK3CA",
+                "camelyon17_lymph",
+                "crc_MSI",
+                "crc_KRAS",
+                "crc_BRAF",
+                "crc_SMAD4",
+            )
+            if magnification == "low"
+            else ("brca_subtype", "brca_CDH1", "brca_TP53", "brca_PIK3CA")
+        ):
+            for augmentations in (
+                ("none", "macenko_patchwise", "macenko_slidewise", "simple_rotate", "all")
+                if magnification == "low"
+                else ("none", "macenko_patchwise")
+            ):
+                for model in ("attmil", "map", "transformer") if magnification == "low" else ("attmil",):
+                    for feature_extractor in (
+                        "ctranspath",
+                        "owkin",
+                        "swin",
+                        "vit",
+                        "retccl",
+                        "resnet50",
+                        "bt",
+                        "swav",
+                        "dino_p16",
+                        "vits",
+                        "owkin_teacher",
+                        "mocov2",
+                    ):
+                        for seed in range(5):
+                            config = {
+                                "+experiment": experiment,
+                                "+feature_extractor": feature_extractor,
+                                "augmentations@dataset.augmentations": augmentations,
+                                "model": model,
+                                "seed": seed,
+                            }
+                            if "camelyon" in experiment:
+                                config["settings.camelyon17_fold"] = seed
+                                config["early_stopping.metric"] = "'val/${dataset.targets[0].column}/auroc'"
+                                config["early_stopping.goal"] = "max"
+                            if magnification == "high":
+                                config["+magnification"] = "high"
+                                config["dataset.num_workers"] = 36
+                            configs.append(config)
 
     logger.info(f"Generated {len(configs)} configs")
 

@@ -19,6 +19,10 @@ def filter_runs(runs, filters: dict):
     return [run for run in runs if all(getattr(run, key, None) == value for key, value in filters.items())]
 
 
+def format_dataset_name(name: str) -> str:
+    return name.replace("_mpp0.5", "")
+
+
 def summarize_run(run):
     history = run.history().groupby("epoch").first()
     best = history[~history.index.isna()].sort_values("val/loss", ascending=True).iloc[0]
@@ -29,9 +33,10 @@ def summarize_run(run):
         test_auroc = history[f"test/{column}/auroc"].max()
     return dict(
         wandb_id=run.id,
+        magnification=run.config["settings"].get("magnification", "low"),
         target=column,
-        train_dataset=run.config["dataset"]["name"],
-        test_dataset=run.config["test"]["dataset"]["name"],
+        train_dataset=format_dataset_name(run.config["dataset"]["name"]),
+        test_dataset=format_dataset_name(run.config["test"]["dataset"]["name"]),
         model=run.config["model"]["_target_"].split(".")[-1],
         feature_extractor=run.config["settings"]["feature_extractor"],
         augmentations=run.config["dataset"]["augmentations"]["name"],
@@ -130,8 +135,8 @@ def compute_results_table(
 if __name__ == "__main__":
     df = load_aurocs()
     r = compute_results_table(
-        df["test_auroc"], keep_fixed=("augmentations", "model", "target"), vary="feature_extractor"
+        df["test_auroc"], keep_fixed=("magnification", "augmentations", "model", "target"), vary="feature_extractor"
     )
-    # r = compute_results_table(
-    #     df["test_auroc"], keep_fixed=("augmentations", "feature_extractor", "target"), vary="model"
-    # )
+    r = compute_results_table(
+        df["test_auroc"], keep_fixed=("magnification", "augmentations", "feature_extractor", "target"), vary="model"
+    )

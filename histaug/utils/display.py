@@ -15,6 +15,7 @@ RENAME_FEATURE_EXTRACTORS = {
     "retccl": "RetCCL",
     "bt": "Lunit-BT",
     "swav": "Lunit-SwAV",
+    "mocov2": "Lunit-MoCo",
 }
 RENAME_TARGETS = {
     "subtype": "\\breasticon-Subtype",
@@ -39,7 +40,7 @@ FEATURE_EXTRACTOR_GROUPS = {
     "Swin": ["swin", "ctranspath"],
     "ViT-B": ["vit", "owkin", "owkin_teacher"],
     "ViT-S": ["vits", "dino_p16"],
-    "ResNet-50": ["resnet50", "retccl", "bt", "swav"],
+    "ResNet-50": ["resnet50", "retccl", "bt", "swav", "mocov2"],
 }
 TARGET_GROUPS = {
     "Breast": ["subtype", "CDH1", "TP53", "PIK3CA"],

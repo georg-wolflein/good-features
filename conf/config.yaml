@@ -13,6 +13,8 @@ settings:
   cache_dir: /raid/histaug/cache
   folds_dir: /data/histaug/folds
   camelyon17_fold: 0
+  magnification: low
+  dataset_suffix: ${eval:"'_mpp0.5' if '${settings.magnification}' == 'high' else ''"}
 
 name: ${dataset.name}-${model_name:${model._target_}}-${settings.feature_extractor}
 project: histaug
