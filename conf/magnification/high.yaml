@@ -2,6 +2,5 @@
 
 settings:
   magnification: high
-  features_dir: /raid/histaug/features
 dataset:
   instances_per_bag: 32768

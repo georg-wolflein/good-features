@@ -53,7 +53,11 @@ def load_aurocs():
     logger.info("Loading runs")
 
     api = wandb.Api()
-    runs = [run for run in api.runs("histaug", order="+created_at", per_page=1000) if run.state == "finished"]
+    runs = [
+        run
+        for run in tqdm(api.runs("histaug", order="+created_at", per_page=1000), desc="Loading runs")
+        if run.state == "finished"
+    ]
     runs = [summarize_run(run) for run in tqdm(runs, desc="Loading run data")]
     runs = [run for run in runs if run is not None]
     df = pd.DataFrame(runs)
@@ -87,6 +91,7 @@ def compute_norm_diff_auroc_worker(args, compare_across: str = "feature_extracto
 
 @cached_df(
     lambda *args, keep_fixed=(
+        "magnification",
         "augmentations",
         "model",
         "target",
@@ -94,7 +99,7 @@ def compute_norm_diff_auroc_worker(args, compare_across: str = "feature_extracto
 )
 def compute_results_table(
     test_aurocs: pd.Series,
-    keep_fixed=("augmentations", "model", "target"),
+    keep_fixed=("magnification", "augmentations", "model", "target"),
     vary="feature_extractor",
     n_workers: int = 32,
 ):
