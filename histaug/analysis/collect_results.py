@@ -11,7 +11,16 @@ from functools import reduce, partial
 
 from histaug.utils import cached_df, RunningStats
 
-INDEX_COLS = ["target", "train_dataset", "test_dataset", "model", "feature_extractor", "augmentations", "seed"]
+INDEX_COLS = [
+    "magnification",
+    "target",
+    "train_dataset",
+    "test_dataset",
+    "model",
+    "feature_extractor",
+    "augmentations",
+    "seed",
+]
 RESULTS_DIR = Path("/app/results")
 
 
@@ -31,21 +40,24 @@ def summarize_run(run):
         test_auroc = run.summary[f"test/{column}/auroc"]["best"]
     else:
         test_auroc = history[f"test/{column}/auroc"].max()
-    return dict(
-        wandb_id=run.id,
-        magnification=run.config["settings"].get("magnification", "low"),
-        target=column,
-        train_dataset=format_dataset_name(run.config["dataset"]["name"]),
-        test_dataset=format_dataset_name(run.config["test"]["dataset"]["name"]),
-        model=run.config["model"]["_target_"].split(".")[-1],
-        feature_extractor=run.config["settings"]["feature_extractor"],
-        augmentations=run.config["dataset"]["augmentations"]["name"],
-        seed=run.config["seed"],
-        train_auroc=best[f"train/{column}/auroc"],
-        val_auroc=best[f"val/{column}/auroc"],
-        test_auroc=test_auroc,
-        runtime=run.summary["_runtime"],
-    )
+    try:
+        return dict(
+            wandb_id=run.id,
+            magnification=run.config["settings"].get("magnification", "low"),
+            target=column,
+            train_dataset=format_dataset_name(run.config["dataset"]["name"]),
+            test_dataset=format_dataset_name(run.config["test"]["dataset"]["name"]),
+            model=run.config["model"]["_target_"].split(".")[-1],
+            feature_extractor=run.config["settings"]["feature_extractor"],
+            augmentations=run.config["dataset"]["augmentations"]["name"],
+            seed=run.config["seed"],
+            train_auroc=best[f"train/{column}/auroc"],
+            val_auroc=best[f"val/{column}/auroc"],
+            test_auroc=test_auroc,
+            runtime=run.summary.get("_runtime", None),
+        )
+    except Exception as e:
+        raise Exception(f"Error summarizing run {run.id}") from e
 
 
 @cached_df(lambda: "aurocs")
@@ -123,7 +135,6 @@ def compute_results_table(
     results_list = process_map(worker, args_list, max_workers=n_workers, tqdm_class=tqdm, desc="Computing results")
 
     # Convert list of results into dictionary
-    print(results_list[0])
     results = {config: result for config, result in results_list}
 
     r = pd.DataFrame(results).map(
@@ -145,3 +156,9 @@ if __name__ == "__main__":
     r = compute_results_table(
         df["test_auroc"], keep_fixed=("magnification", "augmentations", "feature_extractor", "target"), vary="model"
     )
+    # # Compute magnification results (we need to filter because we didn't run high magnification for all configs)
+    # r = compute_results_table(
+    #     df["test_auroc"],  # .query("model == 'AttentionMIL' and augmentations in ['none', 'Macenko_patchwise']"),
+    #     keep_fixed=("augmentations", "model", "feature_extractor", "target"),
+    #     vary="magnification",
+    # )

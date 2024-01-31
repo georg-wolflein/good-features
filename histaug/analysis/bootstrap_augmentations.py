@@ -9,6 +9,7 @@ import torch
 from torchmetrics.classification import MulticlassAUROC
 
 from histaug.utils import cached_df
+from histaug.utils.display import RENAME_FEATURE_EXTRACTORS, RENAME_MODELS, RENAME_TARGETS
 
 TRAIN_DIR = Path("/data/histaug/train")
 BOOTSTRAPS_DIR = Path("/data/histaug/bootstraps")
@@ -70,16 +71,16 @@ def compute_auroc_diffs(runs_a, runs_b, n_bootstraps: int, column, classes):
 
 
 @cached_df(
-    lambda augmentation_a, augmentation_b, *args, **kwargs: f"bootstrapped_augmentations_{augmentation_a}_vs_{augmentation_b}"
+    lambda magnification, augmentation_a, augmentation_b, *args, **kwargs: f"bootstrapped_augmentations_{magnification}_{augmentation_a}_vs_{augmentation_b}"
 )
-def compare_bootstraps(augmentation_a, augmentation_b):
-    logger.info(f"Loading runs for {augmentation_a} vs {augmentation_b}...")
+def compare_bootstraps(magnification, augmentation_a, augmentation_b):
+    logger.info(f"Loading runs for {augmentation_a} vs {augmentation_b} at {magnification} magnification...")
     api = wandb.Api()
     runs = list(api.runs("histaug", order="+created_at", per_page=1000))
     runs = filter_runs(runs, {"state": "finished"})
-    targets = ["BRAF", "CDH1", "KRAS", "MSI", "PIK3CA", "SMAD4", "TP53", "lymph", "subtype"]
-    feature_extractors = ["ctranspath", "swin", "owkin", "vit", "resnet50", "retccl", "bt", "swav", "dino_p16", "vits"]
-    models = ["Transformer", "MeanAveragePooling", "AttentionMIL"]
+    targets = list(RENAME_TARGETS.keys())
+    feature_extractors = list(RENAME_FEATURE_EXTRACTORS.keys())
+    models = list(RENAME_MODELS.keys())
 
     configs = [(model, feature_extractor) for model in models for feature_extractor in feature_extractors]
 
@@ -93,6 +94,7 @@ def compare_bootstraps(augmentation_a, augmentation_b):
             and run.config["settings"]["feature_extractor"] == feature_extractor
             and run.config["model"]["_target_"] == f"histaug.train.models.{model}"
             and run.config["dataset"]["augmentations"]["name"] in [augmentation_a, augmentation_b]
+            and run.config["settings"]["magnification"] == magnification
         ]
 
         seeds = set({run.config["seed"] for run in filtered_runs})
@@ -111,6 +113,7 @@ def compare_bootstraps(augmentation_a, augmentation_b):
                             if run.config["seed"] == seed
                             and run.config["dataset"]["targets"][0]["column"] == target
                             and run.config["dataset"]["augmentations"]["name"] == augmentation_a
+                            and run.config["settings"]["magnification"] == magnification
                         )
                     ),
                     next(
@@ -120,6 +123,7 @@ def compare_bootstraps(augmentation_a, augmentation_b):
                             if run.config["seed"] == seed
                             and run.config["dataset"]["targets"][0]["column"] == target
                             and run.config["dataset"]["augmentations"]["name"] == augmentation_b
+                            and run.config["settings"]["magnification"] == magnification
                         )
                     ),
                 )
@@ -132,6 +136,7 @@ def compare_bootstraps(augmentation_a, augmentation_b):
             classes = sample_run.config["dataset"]["targets"][0]["classes"]
             results.extend(
                 {
+                    "magnification": magnification,
                     "feature_extractor": feature_extractor,
                     "model": model,
                     "target": target,
@@ -153,5 +158,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--b", type=str, default="Macenko_slidewise", help="Augmentation B (default: Macenko_slidewise)"
     )
+    parser.add_argument(
+        "--magnification", type=str, default="low", choices=["low", "high"], help="Magnification (default: low)"
+    )
     args = parser.parse_args()
-    compare_bootstraps(args.a, args.b)
+    compare_bootstraps(args.magnification, args.a, args.b)

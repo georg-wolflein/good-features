@@ -36,6 +36,10 @@ RENAME_AUGMENTATION_GROUPS = {
     "all": "All",
     "simple_rotate": "Rotate/flip",
 }
+RENAME_MAGNIFICATIONS = {
+    "low": "8x",
+    "high": "20x",
+}
 FEATURE_EXTRACTOR_GROUPS = {
     "Swin": ["swin", "ctranspath"],
     "ViT-B": ["vit", "owkin", "owkin_teacher"],

@@ -24,8 +24,12 @@ aug=""
 
 # dataset="/data/shiprec/TCGA-BRCA_MPP0.5"
 # output="/data/histaug/features/TCGA-BRCA_MPP0.5"
-dataset="/data/shiprec/CPTAC-BRCA_MPP0.5"
-output="/data/histaug/features/CPTAC-BRCA_MPP0.5"
+# dataset="/data/shiprec/CPTAC-BRCA_MPP0.5"
+# output="/data/histaug/features/CPTAC-BRCA_MPP0.5"
+# dataset="/data/shiprec/TCGA-CRC_MPP0.5"
+# output="/data/histaug/features/TCGA-CRC_MPP0.5"
+dataset="/data/shiprec/CPTAC-CRC_MPP0.5"
+output="/data/histaug/features/CPTAC-CRC_MPP0.5"
 aug="--aug Macenko"
 
 GPUS=("${@:2}")
