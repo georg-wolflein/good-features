@@ -60,8 +60,8 @@ def summarize_run(run):
         raise Exception(f"Error summarizing run {run.id}") from e
 
 
-@cached_df(lambda: "aurocs")
-def load_aurocs():
+@cached_df(lambda: "results")
+def load_results():
     logger.info("Loading runs")
 
     api = wandb.Api()
@@ -149,7 +149,7 @@ def compute_results_table(
 
 
 if __name__ == "__main__":
-    df = load_aurocs()
+    df = load_results()
     r = compute_results_table(
         df["test_auroc"], keep_fixed=("magnification", "augmentations", "model", "target"), vary="feature_extractor"
     )

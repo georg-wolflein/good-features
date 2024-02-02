@@ -58,7 +58,16 @@ def run(dry_run: bool = False, check_wandb: bool = True):
                     "crc_SMAD4",
                 )
                 if magnification == "low"
-                else ("brca_subtype", "brca_CDH1", "brca_TP53", "brca_PIK3CA")
+                else (
+                    "brca_subtype",
+                    "brca_CDH1",
+                    "brca_TP53",
+                    "brca_PIK3CA",
+                    "crc_MSI",
+                    "crc_KRAS",
+                    "crc_BRAF",
+                    "crc_SMAD4",
+                )
             ):
                 for augmentations in (
                     ("none", "macenko_patchwise", "macenko_slidewise", "simple_rotate", "all")
