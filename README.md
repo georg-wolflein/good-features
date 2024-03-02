@@ -20,9 +20,6 @@ Deep learning is revolutionising pathology, offering novel opportunities in dise
 - We compare 10 feature extractors, and find [CTransPath](https://github.com/Xiyue-Wang/TransPath) and [Lunit's DINO](https://github.com/lunit-io/benchmark-ssl-pathology) model produce the best representations for downstream weakly supervised slide classification tasks.
 - We show that stain normalisation and image augmentations may be omitted without compromising downstream performance.
 
-> [!NOTE]
-> One of the feature extractors we evaluate in our paper is Owkin's [Phikon](https://github.com/owkin/HistoSSLscaling) model. We report results based on the "student" variant, which at the time of running our experiments was recommended in their repository. However, their recommendation has since been updated to prefer the "teacher" model instead.
-
 ## Overview
 ![](assets/overview.png)
 
@@ -32,7 +29,7 @@ If you find this useful, please cite:
 
 ```bibtex
 @misc{wolflein2023good,
-    title   = {A Good Feature Extractor Is All You Need for Weakly Supervised Learning in Histopathology}, 
+    title   = {A Good Feature Extractor Is All You Need for Weakly Supervised Pathology Image Classification}, 
     author  = {W\"{o}lflein, Georg and Ferber, Dyke and Meneghetti, Asier Rabasco and El Nahhas, Omar S. M. and Truhn, Daniel and Carrero, Zunamys I. and Harrison, David J. and Arandjelovi\'{c}, Ognjen and Kather, Jakob N.},
     journal = {arXiv:2311.11772},
     year    = {2023},

@@ -3,18 +3,18 @@
  & Target & \breasticon-Subtype & \breasticon-CDH1 & \breasticon-TP53 & \breasticon-PIK3CA & \breasticon-LN status & \colonicon-MSI & \colonicon-KRAS & \colonicon-BRAF & \colonicon-SMAD4 \\
 Model & Feature extractor &  &  &  &  &  &  &  &  &  \\
 \midrule
-\multirow[t]{12}{*}{AttMIL} & Swin & $0.69 \pm 0.02$ & $0.70 \pm 0.00$ & $0.60 \pm 0.04$ & $\mathbf{0.63 \pm 0.01}$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ \\
- & CTransPath & $\mathbf{0.80 \pm 0.02}$ & $0.70 \pm 0.05$ & $\mathbf{0.78 \pm 0.03}$ & $0.60 \pm 0.01$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ \\
- & ViT-B & $0.66 \pm 0.02$ & $0.75 \pm 0.02$ & $0.66 \pm 0.02$ & $0.62 \pm 0.01$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ \\
- & Phikon & $0.73 \pm 0.03$ & $0.76 \pm 0.03$ & $0.69 \pm 0.04$ & $0.59 \pm 0.02$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ \\
- & Phikon (teacher) & $0.76 \pm 0.02$ & $\mathbf{0.78 \pm 0.05}$ & $0.73 \pm 0.03$ & $0.61 \pm 0.03$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ \\
- & ViT-S & $0.62 \pm 0.03$ & $0.78 \pm 0.02$ & $0.63 \pm 0.03$ & $0.59 \pm 0.02$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ \\
- & Lunit-DINO & $0.74 \pm 0.01$ & $0.74 \pm 0.02$ & $0.75 \pm 0.02$ & $0.61 \pm 0.02$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ \\
- & ResNet-50 & $0.65 \pm 0.01$ & $0.66 \pm 0.03$ & $0.59 \pm 0.02$ & $0.61 \pm 0.06$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ \\
- & RetCCL & $0.74 \pm 0.03$ & $0.69 \pm 0.03$ & $0.66 \pm 0.03$ & $0.60 \pm 0.01$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ \\
- & Lunit-BT & $0.67 \pm 0.03$ & $0.65 \pm 0.01$ & $0.71 \pm 0.10$ & $0.50 \pm 0.01$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ \\
- & Lunit-SwAV & $0.72 \pm 0.01$ & $0.68 \pm 0.01$ & $0.72 \pm 0.04$ & $0.60 \pm 0.05$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ \\
- & Lunit-MoCo & $0.75 \pm 0.02$ & $0.65 \pm 0.03$ & $0.75 \pm 0.02$ & $0.61 \pm 0.01$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ \\
+\multirow[t]{12}{*}{AttMIL} & Swin~\cite{liu2021swin} & $0.69 \pm 0.02$ & $0.70 \pm 0.00$ & $0.60 \pm 0.04$ & $\mathbf{0.63 \pm 0.01}$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ \\
+ & CTransPath~\cite{wang2022transformer} & $\mathbf{0.80 \pm 0.02}$ & $0.70 \pm 0.05$ & $\mathbf{0.78 \pm 0.03}$ & $0.60 \pm 0.01$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ \\
+ & ViT-S~\cite{kolesnikov2021image} & $0.62 \pm 0.03$ & $0.78 \pm 0.02$ & $0.63 \pm 0.03$ & $0.59 \pm 0.02$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ \\
+ & Lunit-DINO~\cite{kang2023benchmarking} & $0.74 \pm 0.01$ & $0.74 \pm 0.02$ & $0.75 \pm 0.02$ & $0.61 \pm 0.02$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ \\
+ & ViT-B~\cite{kolesnikov2021image} & $0.66 \pm 0.02$ & $0.75 \pm 0.02$ & $0.66 \pm 0.02$ & $0.62 \pm 0.01$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ \\
+ & Phikon-S~\cite{filiot2023scaling} & $0.73 \pm 0.03$ & $0.76 \pm 0.03$ & $0.69 \pm 0.04$ & $0.59 \pm 0.02$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ \\
+ & Phikon-T~\cite{filiot2023scaling} & $0.76 \pm 0.02$ & $\mathbf{0.78 \pm 0.05}$ & $0.73 \pm 0.03$ & $0.61 \pm 0.03$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ \\
+ & ResNet-50~\cite{he2015deep} & $0.65 \pm 0.01$ & $0.66 \pm 0.03$ & $0.59 \pm 0.02$ & $0.61 \pm 0.06$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ \\
+ & RetCCL~\cite{wang2023retccl} & $0.74 \pm 0.03$ & $0.69 \pm 0.03$ & $0.66 \pm 0.03$ & $0.60 \pm 0.01$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ \\
+ & Lunit-BT~\cite{kang2023benchmarking} & $0.67 \pm 0.03$ & $0.65 \pm 0.01$ & $0.71 \pm 0.10$ & $0.50 \pm 0.01$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ \\
+ & Lunit-SwAV~\cite{kang2023benchmarking} & $0.72 \pm 0.01$ & $0.68 \pm 0.01$ & $0.72 \pm 0.04$ & $0.60 \pm 0.05$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ \\
+ & Lunit-MoCo~\cite{kang2023benchmarking} & $0.75 \pm 0.02$ & $0.65 \pm 0.03$ & $0.75 \pm 0.02$ & $0.61 \pm 0.01$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ & $nan \pm nan$ \\
 \cline{1-11}
 \bottomrule
 \end{tabular}
