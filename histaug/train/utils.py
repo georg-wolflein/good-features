@@ -60,7 +60,7 @@ def make_dataset_df(
                 )
             slide_df = slide_df[~na_idxs]
             slide_dfs.append(slide_df)
-            assert not slide_df.empty, f"no features for slide table {slide_table}"
+            assert not slide_df.empty, f"no features for slide table {slide_table} found in {feature_dirs}"
 
         df = pd.concat(slide_dfs)
     else:

@@ -2,7 +2,7 @@ defaults:
   - _tcga_brca
   - _self_
 
-name: tcga_brca_${.targets[0].column}
+name: tcga_brca${settings.dataset_suffix}_${.targets[0].column}
 targets:
   - column: subtype
     type: categorical

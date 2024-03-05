@@ -2,7 +2,7 @@ defaults:
   - _tcga_crc
   - _self_
 
-name: tcga_crc_${.targets[0].column}
+name: tcga_crc${settings.dataset_suffix}_${.targets[0].column}
 targets:
   - column: MSI
     type: categorical

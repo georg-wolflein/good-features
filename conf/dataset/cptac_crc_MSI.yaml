@@ -2,7 +2,7 @@ defaults:
   - _cptac_crc
   - _self_
 
-name: cptac_crc_${.targets[0].column}
+name: cptac_crc${settings.dataset_suffix}_${.targets[0].column}
 targets:
   - column: MSI
     type: categorical

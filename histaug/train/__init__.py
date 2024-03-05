@@ -212,7 +212,7 @@ def make_trainer(
     wandb_logger.experiment.config.update(OmegaConf.to_container(cfg, resolve=True, throw_on_missing=True))
     wandb_logger.experiment.config["overrides"] = " ".join(sys.argv[1:])
     wandb_logger.experiment.log_code(
-        ".",
+        "./histaug",
         include_fn=lambda path: Path(path).suffix in {".py", ".yaml", ".yml"} and "env" not in Path(path).parts,
     )
     if crossval_id is not None:

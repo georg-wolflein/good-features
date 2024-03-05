@@ -7,6 +7,8 @@ fi
 
 model="$1" # "ctranspath" "swin" "retccl" "resnet50" "owkin" "vit"
 
+aug=""
+
 # dataset="/data/shiprec/camelyon16/training"
 # output="/data/histaug/features/camelyon16"
 # dataset="/data/shiprec/TCGA-BRCA"
@@ -15,21 +17,29 @@ model="$1" # "ctranspath" "swin" "retccl" "resnet50" "owkin" "vit"
 # output="/data/histaug/features/CPTAC-BRCA"
 # dataset="/raid/shiprec/CAMELYON17" # RAID!!!
 # output="/data/histaug/features/CAMELYON17"
-# dataset="/data/shiprec/TCGA-CRC"
-# output="/data/histaug/features/TCGA-CRC"
+#dataset="/data/shiprec/TCGA-CRC"
+#output="/data/histaug/features/TCGA-CRC"
 # dataset="/data/shiprec/CPTAC-CRC"
 # output="/data/histaug/features/CPTAC-CRC"
-dataset="/data/shiprec/TCGA-BRCA_MPP0.5"
-output="/data/histaug/features/TCGA-BRCA_MPP0.5"
+
+# dataset="/data/shiprec/TCGA-BRCA_MPP0.5"
+# output="/data/histaug/features/TCGA-BRCA_MPP0.5"
+# dataset="/data/shiprec/CPTAC-BRCA_MPP0.5"
+# output="/data/histaug/features/CPTAC-BRCA_MPP0.5"
+# dataset="/data/shiprec/TCGA-CRC_MPP0.5"
+# output="/data/histaug/features/TCGA-CRC_MPP0.5"
+dataset="/data/shiprec/CPTAC-CRC_MPP0.5"
+output="/data/histaug/features/CPTAC-CRC_MPP0.5"
+aug="--aug Macenko"
 
 GPUS=("${@:2}")
 CMDS=(
-    # "env/bin/python -m histaug.extract_features.slide_dataset --dataset $dataset --output $output --model $model"
-    "env/bin/python -m histaug.extract_features.slide_dataset --dataset $dataset --output $output --model $model --aug Macenko"
-    # "env/bin/python -m histaug.extract_features.slide_dataset --dataset $dataset --output $output --model $model --aug Macenko --start 0 --end 300"
-    # "env/bin/python -m histaug.extract_features.slide_dataset --dataset $dataset --output $output --model $model --aug Macenko --start 300 --end 600"
-    # "env/bin/python -m histaug.extract_features.slide_dataset --dataset $dataset --output $output --model $model --aug Macenko --start 600 --end 900"
-    # "env/bin/python -m histaug.extract_features.slide_dataset --dataset $dataset --output $output --model $model --aug Macenko --start 900"
+    "env/bin/python -m histaug.extract_features.slide_dataset --dataset $dataset --output $output --model $model $aug"
+    # "env/bin/python -m histaug.extract_features.slide_dataset --dataset $dataset --output $output --model $model $aug --start 0 --end 300"
+    # "env/bin/python -m histaug.extract_features.slide_dataset --dataset $dataset --output $output --model $model $aug --start 300"
+    # "env/bin/python -m histaug.extract_features.slide_dataset --dataset $dataset --output $output --model $model $aug --start 300 --end 600"
+    # "env/bin/python -m histaug.extract_features.slide_dataset --dataset $dataset --output $output --model $model $aug --start 600 --end 900"
+    # "env/bin/python -m histaug.extract_features.slide_dataset --dataset $dataset --output $output --model $model $aug --start 900"
 )
 
 session="extract"

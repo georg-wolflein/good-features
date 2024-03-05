@@ -1,0 +1,6 @@
+# @package _global_
+
+settings:
+  magnification: high
+dataset:
+  instances_per_bag: 32768

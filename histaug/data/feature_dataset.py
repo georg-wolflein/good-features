@@ -83,8 +83,8 @@ class FeatureDataset(Dataset):
             slide_indices = indices[indices[:, 0] == slide_index]
             for augmentation_index, augmentation in enumerate(self.augmentations):
                 augmentation_indices = slide_indices[slide_indices[:, 2] == augmentation_index]
-                feats.append(f[self._group_name_for_aug(augmentation)][augmentation_indices[:, 1]])
-                coords.append(f["coords"][augmentation_indices[:, 1]])
+                feats.append(f[self._group_name_for_aug(augmentation)][:][augmentation_indices[:, 1]])
+                coords.append(f["coords"][:][augmentation_indices[:, 1]])
 
         feats = np.concatenate(feats)
         coords = np.concatenate(coords)
