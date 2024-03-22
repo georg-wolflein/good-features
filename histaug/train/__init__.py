@@ -70,17 +70,21 @@ class LitMilTransformer(pl.LightningModule):
 
         self.losses = nn.ModuleDict(
             {
-                target.column: nn.CrossEntropyLoss(
-                    weight=(
-                        w := torch.tensor(target.weights, device=self.device, dtype=torch.float)
-                        if target.weights
-                        else torch.ones(len(target.classes), device=self.device, dtype=torch.float)
+                target.column: (
+                    nn.CrossEntropyLoss(
+                        weight=(
+                            w := (
+                                torch.tensor(target.weights, device=self.device, dtype=torch.float)
+                                if target.weights
+                                else torch.ones(len(target.classes), device=self.device, dtype=torch.float)
+                            )
+                        )
+                        / w.sum(),
+                        reduction="sum",
                     )
-                    / w.sum(),
-                    reduction="sum",
+                    if target.type == "categorical"
+                    else nn.MSELoss()
                 )
-                if target.type == "categorical"
-                else nn.MSELoss()
                 for target in self.targets
             }
         )
@@ -250,9 +254,9 @@ def make_trainer(
         max_epochs=cfg.max_epochs,
         accelerator="gpu",
         devices=cfg.device or 1,
-        accumulate_grad_batches=cfg.accumulate_grad_samples // cfg.dataset.batch_size
-        if cfg.accumulate_grad_samples
-        else 1,
+        accumulate_grad_batches=(
+            cfg.accumulate_grad_samples // cfg.dataset.batch_size if cfg.accumulate_grad_samples else 1
+        ),
         gradient_clip_val=cfg.grad_clip,
         logger=[CSVLogger(save_dir=out_dir), wandb_logger],
     )

@@ -1,4 +1,13 @@
-from torchvision.models import resnet50, ResNet50_Weights, swin_t, Swin_T_Weights, vit_b_16, ViT_B_16_Weights
+from torchvision.models import (
+    resnet50,
+    ResNet50_Weights,
+    swin_t,
+    Swin_T_Weights,
+    vit_b_16,
+    ViT_B_16_Weights,
+    vit_l_16,
+    ViT_L_16_Weights,
+)
 from torch import nn
 import torch
 from torchvision import transforms as T
@@ -9,6 +18,7 @@ from .ctranspath import CTransPath
 from .retccl import RetCCL
 from .owkin import Owkin
 from .lunit import resnet50 as lunit_resnet50, vit_small as lunit_vit_small
+from .uni import UNI
 from ..utils.images import IMAGENET_MEAN, IMAGENET_STD, LUNIT_MEAN, LUNIT_STD
 
 __all__ = [
@@ -65,6 +75,14 @@ class ViTB(nn.Module):
         return feats
 
 
+class ViTL(ViTB):
+    """ViT-L feature extractor."""
+
+    def __init__(self, pretrained: bool = True):
+        super().__init__()
+        self.model = vit_l_16(weights=ViT_L_16_Weights.IMAGENET1K_V1 if pretrained else None)
+
+
 class ViTS(nn.Module):
     """ViT-S feature extractor."""
 
@@ -91,6 +109,7 @@ class FeatureExtractor(nn.Module):
 _imagenet_transform = T.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD)
 _lunit_transform = T.Normalize(mean=LUNIT_MEAN, std=LUNIT_STD)
 _vits_transform = T.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+_uni_transform = T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
 FEATURE_EXTRACTORS = {
     "ctranspath": lambda: FeatureExtractor(CTransPath(), name="ctranspath", transform=_imagenet_transform),
@@ -118,6 +137,8 @@ FEATURE_EXTRACTORS = {
         lunit_vit_small(key="DINO_p8", pretrained=True, progress=True), name="dino_p8", transform=_lunit_transform
     ),
     "vits": lambda: FeatureExtractor(ViTS(), name="vits", transform=_vits_transform),
+    "uni": lambda: FeatureExtractor(UNI(), name="uni", transform=_uni_transform),
+    "vitl": lambda: FeatureExtractor(ViTL(), name="vitl", transform=_imagenet_transform),
 }
 
 
