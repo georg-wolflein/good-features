@@ -8,6 +8,7 @@ from tqdm.contrib.concurrent import process_map
 import numpy as np
 import math
 from functools import reduce, partial
+import time
 
 from histaug.utils import cached_df, RunningStats
 
@@ -86,18 +87,37 @@ def compute_norm_diff_auroc(sub_df, show_progress: bool = False, compare_across:
     n_combinations = int(len(seeds) ** len(feature_extractors))
     stats_by_feature_extractor = {fe: RunningStats() for fe in feature_extractors}
 
-    for auroc_values in tqdm(combinations, total=n_combinations) if show_progress else combinations:
-        diffs = np.array(auroc_values).max() - np.array(auroc_values)
-        for fe, diff in zip(feature_extractors, diffs):
-            stats_by_feature_extractor[fe].update(diff)
+    # for auroc_values in tqdm(combinations, total=n_combinations) if show_progress else combinations:
+    #     max_aurox = max(auroc_values)
+    #     for fe, auroc_value in zip(feature_extractors, auroc_values):
+    #         stats_by_feature_extractor[fe].update(max_aurox - auroc_value)
 
+    batch_size = 1024
+    buf = np.empty((batch_size, len(feature_extractors)))
+    i = 0
+    for auroc_values in tqdm(combinations, total=n_combinations, unit_scale=True) if show_progress else combinations:
+        auroc_values = np.array(auroc_values)
+        diffs = auroc_values.max() - auroc_values
+        buf[i] = diffs
+        if i < batch_size - 1:
+            i += 1
+        else:
+            for j, fe in enumerate(feature_extractors):
+                stats_by_feature_extractor[fe].update_batch(buf[:, j])
+            i = 0
+    # Update stats for the last batch
+    if i > 0:
+        for j, fe in enumerate(feature_extractors):
+            stats_by_feature_extractor[fe].update_batch(buf[:i, j])
     return {fe: stats.compute() for fe, stats in stats_by_feature_extractor.items()}
 
 
-def compute_norm_diff_auroc_worker(args, compare_across: str = "feature_extractor"):
+def compute_norm_diff_auroc_worker(args, compare_across: str = "feature_extractor", show_progress: bool = False):
     config, sub_data = args
-    result = compute_norm_diff_auroc(sub_data, compare_across=compare_across)
-    logger.debug(f"Computed results for {config}")
+    logger.debug(f"Computing results for {config}")
+    t0 = time.time()
+    result = compute_norm_diff_auroc(sub_data, compare_across=compare_across, show_progress=show_progress)
+    logger.debug(f"Computed results for {config} in {time.time() - t0:.2f}s")
     return config, result
 
 
@@ -113,7 +133,7 @@ def compute_results_table(
     test_aurocs: pd.Series,
     keep_fixed=("magnification", "augmentations", "model", "target"),
     vary="feature_extractor",
-    n_workers: int = 32,
+    n_workers: int = 1,
 ):
     """Compute average offsets from best for each (target, model, augmentation) pair using multiprocessing."""
     keep_fixed = list(keep_fixed)
@@ -130,9 +150,12 @@ def compute_results_table(
         for config in unique_pairs
     ]
 
-    # Use multiprocessing Pool to compute results in parallel
     worker = partial(compute_norm_diff_auroc_worker, compare_across=vary)
-    results_list = process_map(worker, args_list, max_workers=n_workers, tqdm_class=tqdm, desc="Computing results")
+    if n_workers <= 1:
+        results_list = [worker(args, show_progress=True) for args in tqdm(args_list, desc="Computing results")]
+    else:
+        # Use multiprocessing Pool to compute results in parallel
+        results_list = process_map(worker, args_list, max_workers=n_workers, tqdm_class=tqdm, desc="Computing results")
 
     # Convert list of results into dictionary
     results = {config: result for config, result in results_list}
@@ -156,9 +179,9 @@ if __name__ == "__main__":
     r = compute_results_table(
         df["test_auroc"], keep_fixed=("magnification", "augmentations", "feature_extractor", "target"), vary="model"
     )
-    # # Compute magnification results (we need to filter because we didn't run high magnification for all configs)
-    # r = compute_results_table(
-    #     df["test_auroc"],  # .query("model == 'AttentionMIL' and augmentations in ['none', 'Macenko_patchwise']"),
-    #     keep_fixed=("augmentations", "model", "feature_extractor", "target"),
-    #     vary="magnification",
-    # )
+    # Compute magnification results (we need to filter because we didn't run high magnification for all configs)
+    r = compute_results_table(
+        df["test_auroc"].query("augmentations in ['none', 'Macenko_patchwise']"),
+        keep_fixed=("augmentations", "model", "feature_extractor", "target"),
+        vary="magnification",
+    )

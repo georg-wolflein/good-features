@@ -1,57 +1,60 @@
-from histaug.utils.statistics import RunningStats
-import math
+import pytest
+from typing import Type
+import numpy as np
+
+from histaug.utils.statistics import RunningStats, NaiveStats, BaseStats
 
 
-def test_initialization():
-    stats = RunningStats()
-    assert stats.count == 0
-    assert stats.mean == 0.0
-    assert stats.M2 == 0.0
+def generate_random_test_cases(num_cases, max_size, min=-10.0, max=1e4) -> np.ndarray:
+    np.random.seed(0)
+    return [np.random.uniform(-min, max, size=np.random.randint(0, max_size)) for _ in range(num_cases)]
 
 
-def test_update_method():
-    stats = RunningStats()
-
-    stats.update(5)
-    assert stats.count == 1
-    assert stats.mean == 5.0
-    assert stats.M2 == 0.0
-
-    stats.update(7)
-    assert stats.count == 2
-    assert stats.mean == 6.0
-    # Hand calculated M2 value after two updates
-    assert stats.M2 == 2.0
+def generate_random_batched_test_cases(num_cases, max_num_batches, max_batch_size, min=-10.0, max=1e4) -> np.ndarray:
+    np.random.seed(0)
+    return [
+        [
+            np.random.uniform(min, max, size=np.random.randint(0, max_batch_size))
+            for _ in range(np.random.randint(0, max_num_batches))
+        ]
+        for _ in range(num_cases)
+    ]
 
 
-def test_compute_method():
-    stats = RunningStats()
-
-    # Since count is 0, mean and variance should be NaN
-    mean, std = stats.compute()
-    assert math.isnan(mean)
-    assert math.isnan(std)
-
-    stats.update(5)
-    stats.update(7)
-
-    mean, std = stats.compute()
-    assert mean == 6.0
-    assert std == 1.0  # (5-6)^2 + (7-6)^2 = 1 + 1 = 2, divided by 2, sqrt
+test_cases = generate_random_test_cases(10, 100)  # 10 test cases, up to 100 elements each
+batched_test_cases = generate_random_batched_test_cases(
+    10, 10, 100
+)  # 10 test cases, up to 10 batches, up to 100 elements each
 
 
-def test_update_with_multiple_data_points():
-    stats = RunningStats()
+@pytest.mark.parametrize("values", test_cases)
+@pytest.mark.parametrize("implementation", [NaiveStats, RunningStats])
+def test_stats_update(values, implementation: Type[BaseStats]):
+    impl = implementation()
 
-    data = [2, 4, 4, 4, 5, 5, 7, 9]
-    expected_mean = sum(data) / len(data)  # which is 5.0
+    for value in values:
+        impl.update(value)
 
-    # Calculating the variance manually for this dataset:
-    expected_std = math.sqrt(sum((x - expected_mean) ** 2 for x in data) / len(data))  # which is 4.0
+    stats = impl.compute()
+    real_mean = np.mean(values) if len(values) else float("nan")
+    real_std = np.std(values) if len(values) >= 2 else float("nan")
 
-    for number in data:
-        stats.update(number)
+    assert stats.mean == pytest.approx(real_mean, abs=1e-6, nan_ok=True)
+    assert stats.std == pytest.approx(real_std, abs=1e-6, nan_ok=True)
 
-    mean, std = stats.compute()
-    assert mean == expected_mean
-    assert std == expected_std
+
+@pytest.mark.parametrize("values", batched_test_cases)
+@pytest.mark.parametrize("implementation", [NaiveStats, RunningStats])
+def test_stats_update_batch(values, implementation: Type[BaseStats]):
+    impl = implementation()
+
+    for batch in values:
+        impl.update_batch(batch)
+
+    stats = impl.compute()
+    num_values = sum(batch.size for batch in values)
+    real_mean = np.mean(np.concatenate(values)) if num_values else float("nan")
+    real_std = np.std(np.concatenate(values)) if num_values >= 2 else float("nan")
+
+    assert stats.mean == pytest.approx(real_mean, abs=1e-6, nan_ok=True)
+    assert stats.std == pytest.approx(real_std, abs=1e-6, nan_ok=True)
