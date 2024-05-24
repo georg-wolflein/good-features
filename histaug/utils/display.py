@@ -11,6 +11,8 @@ RENAME_FEATURE_EXTRACTORS = {
     "vit": "ViT-B",
     "owkin": "Phikon-S",
     "owkin_teacher": "Phikon-T",
+    "vitl": "ViT-L",
+    "uni": "UNI",
     "resnet50": "ResNet-50",
     "retccl": "RetCCL",
     "bt": "Lunit-BT",
@@ -25,6 +27,8 @@ FEATURE_EXTRACTOR_REFERENCES = {
     "vit": "kolesnikov2021image",
     "owkin": "filiot2023scaling",
     "owkin_teacher": "filiot2023scaling",
+    "vitl": "kolesnikov2021image",
+    "uni": "chen2023generalpurpose",
     "resnet50": "he2015deep",
     "retccl": "wang2023retccl",
     "bt": "kang2023benchmarking",
@@ -62,6 +66,7 @@ FEATURE_EXTRACTOR_GROUPS = {
     "Swin": ["swin", "ctranspath"],
     "ViT-S": ["vits", "dino_p16"],
     "ViT-B": ["vit", "owkin", "owkin_teacher"],
+    "ViT-L": ["vitl", "uni"],
     "ResNet-50": ["resnet50", "retccl", "bt", "swav", "mocov2"],
 }
 TARGET_GROUPS = {

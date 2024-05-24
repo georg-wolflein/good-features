@@ -6,12 +6,14 @@ import libtmux
 import hashlib
 from tqdm import tqdm
 
-GPUS = [0, 1, 2, 3, 4, 5, 6, 7]
-GPUS = [5, 6, 7]
-GPUS = [7]
+# GPUS = [0, 1, 2, 3, 4, 5, 6, 7]
+GPUS = [1, 2, 3, 4]
+# GPUS = [6, 7]
 
 IGNORE_CONFIG_KEYS = ["early_stopping.metric", "early_stopping.goal", "dataset.num_workers"]
-RAM_BOMB = True  # whether to run the RAM bomb to clear disk cache before changing feature extractors (only makes sense when using 1 GPU)
+RAM_BOMB = False  # whether to run the RAM bomb to clear disk cache before changing feature extractors (only makes sense when using 1 GPU)
+
+assert not (RAM_BOMB and len(GPUS) != 1), "RAM bomb only makes sense when using 1 GPU"
 
 
 def run(dry_run: bool = False, check_wandb: bool = True):
@@ -44,9 +46,10 @@ def run(dry_run: bool = False, check_wandb: bool = True):
             "vits",
             "owkin_teacher",
             "mocov2",
+            "uni",
+            "vitl",
         ):
             for experiment in (
-                (
                     "brca_subtype",
                     "brca_CDH1",
                     "brca_TP53",
@@ -56,18 +59,6 @@ def run(dry_run: bool = False, check_wandb: bool = True):
                     "crc_KRAS",
                     "crc_BRAF",
                     "crc_SMAD4",
-                )
-                if magnification == "low"
-                else (
-                    "brca_subtype",
-                    "brca_CDH1",
-                    "brca_TP53",
-                    "brca_PIK3CA",
-                    "crc_MSI",
-                    "crc_KRAS",
-                    "crc_BRAF",
-                    "crc_SMAD4",
-                )
             ):
                 for augmentations in (
                     ("none", "macenko_patchwise", "macenko_slidewise", "simple_rotate", "all")
@@ -155,7 +146,10 @@ def run(dry_run: bool = False, check_wandb: bool = True):
                 f.write("#!/bin/bash\n")
                 previous_feature_extractor = None
                 for i, (config, path) in enumerate(configs, 1):
-                    if RAM_BOMB and config["+feature_extractor"] != previous_feature_extractor:
+                    if RAM_BOMB and previous_feature_extractor != (
+                        config["+feature_extractor"],
+                        config.get("+magnification", "low"),
+                    ):
                         f.write("echo\n")
                         f.write("echo ========================================\n")
                         f.write(f"echo Running RAM bomb to clear disk cache\n")
@@ -163,7 +157,10 @@ def run(dry_run: bool = False, check_wandb: bool = True):
                         f.write("echo\n")
                         f.write("python scripts/rambomb.py\n")
                         f.write("\n")
-                        previous_feature_extractor = config["+feature_extractor"]
+                        previous_feature_extractor = (
+                            config["+feature_extractor"],
+                            config.get("+magnification", "low"),
+                        )
                     cmd = f"CUDA_VISIBLE_DEVICES={gpu} python -m histaug.train.oneval {' '.join(f'{k}={v}' for k, v in config.items())}"
                     f.write("echo\n")
                     f.write("echo ========================================\n")

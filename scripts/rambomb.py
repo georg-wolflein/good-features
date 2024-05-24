@@ -1,4 +1,4 @@
-"""Hacky script to occupy and then release RAM in order to flush disk cache."""
+"""Hacky script to occupy and then release RAM in order to flush disk cache (easier to run this than annoy the sysadmin to run `sync`)."""
 
 import psutil
 import gc
@@ -12,14 +12,13 @@ def get_available_ram():
     return psutil.virtual_memory().available
 
 
-def occupy_ram(keep_unoccupied: int = 3 * 1024**3):
+def occupy_ram(keep_unoccupied: int = 5 * 1024**3):
     """
     Occupy the specified amount of RAM.
 
     Args:
-        keep_unoccupied: The amount of RAM to keep unoccupied in bytes (default: 3GB).
+        keep_unoccupied: The amount of RAM to keep unoccupied in bytes (default: 5GB).
     """
-    print(f"Occupying RAM...")
     chunk_size = 2 * (1024**3)  # Size of each chunk (2GB)
     occupied_memory = []
     occupied = 0
@@ -46,16 +45,26 @@ def ram_summary():
     vmem = psutil.virtual_memory()
     print("=== RAM Summary ===")
     print(f"Available RAM: {vmem.available / (1024**3):.2f} GB")
+    print(f"Free:          {vmem.free / (1024**3):.2f} GB")
     print(f"Cached:        {vmem.cached / (1024**3):.2f} GB")
     print(f"Buffers:       {vmem.buffers / (1024**3):.2f} GB")
     print(f"Total RAM:     {vmem.total / (1024**3):.2f} GB")
     print("===================")
+    return vmem
 
 
 if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="RAM bomb to clear disk cache")
+    parser.add_argument(
+        "--keep-unoccupied", type=int, default=5, help="Amount of RAM to keep unoccupied in GB (default: 5GB)"
+    )
+    args = parser.parse_args()
+
+    vmem = ram_summary()
     try:
-        ram_summary()
-        occupy_ram()
+        occupy_ram(keep_unoccupied=args.keep_unoccupied * 1024**3)
     finally:
         release_ram()
         print("RAM released.")

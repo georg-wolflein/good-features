@@ -1,11 +1,11 @@
 #!/bin/bash
 
-MODELS=(ctranspath swin retccl resnet50 owkin vit bt swav dino_p16 vits)
+MODELS=(ctranspath swin retccl resnet50 owkin vit bt swav dino_p16 vits mocov2 owkin_teacher vitl uni)
 # MODELS=(bt swav dino_p16 dino_p8)
 # MODELS=(bt swav)
 GPUS=(0 1 2 3 4 5 6 7)
-MODELS=(mocov2)
-GPUS=(1)
+MODELS=(uni vitl)
+GPUS=(0 7)
 session="extract"
 
 tmux new-session -d -s $session

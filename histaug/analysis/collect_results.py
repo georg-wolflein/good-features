@@ -181,7 +181,7 @@ if __name__ == "__main__":
     )
     # Compute magnification results (we need to filter because we didn't run high magnification for all configs)
     r = compute_results_table(
-        df["test_auroc"].query("augmentations in ['none', 'Macenko_patchwise']"),
+        df.query("augmentations in ['none', 'Macenko_patchwise']")["test_auroc"],
         keep_fixed=("augmentations", "model", "feature_extractor", "target"),
         vary="magnification",
     )
