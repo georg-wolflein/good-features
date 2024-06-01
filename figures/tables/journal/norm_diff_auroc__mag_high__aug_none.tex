@@ -1,0 +1,22 @@
+\begin{tabular}{ll|cccc|c|cccc|c}
+\toprule
+ & Target & \breasticon-Subtype & \breasticon-CDH1 & \breasticon-TP53 & \breasticon-PIK3CA & \breasticon-LN status & \colonicon-MSI & \colonicon-KRAS & \colonicon-BRAF & \colonicon-SMAD4 & Average \\
+Model & Feature extractor &  &  &  &  &  &  &  &  &  &  \\
+\midrule
+\multirow[t]{14}{*}{AttMIL} & Swin~\cite{liu2021swin} & $0.12 \pm 0.01$ & $0.05 \pm 0.04$ & $0.20 \pm 0.05$ & $0.08 \pm 0.02$ & $0.22 \pm 0.07$ & $0.17 \pm 0.05$ & $0.12 \pm 0.05$ & $0.13 \pm 0.04$ & $0.12 \pm 0.03$ & $0.135 \pm 0.045$ \\
+ & CTransPath~\cite{wang2022transformer} & $\mathbf{0.00 \pm 0.00}$ & $0.12 \pm 0.05$ & $0.02 \pm 0.02$ & $0.06 \pm 0.03$ & $0.09 \pm 0.05$ & $0.11 \pm 0.06$ & $0.11 \pm 0.04$ & $0.09 \pm 0.03$ & $0.03 \pm 0.03$ & $0.071 \pm 0.038$ \\
+ & ViT-S~\cite{kolesnikov2021image} & $0.13 \pm 0.02$ & $0.04 \pm 0.02$ & $0.19 \pm 0.07$ & $0.08 \pm 0.04$ & $0.22 \pm 0.10$ & $0.14 \pm 0.03$ & $0.12 \pm 0.02$ & $0.16 \pm 0.06$ & $0.10 \pm 0.06$ & $0.132 \pm 0.055$ \\
+ & Lunit-DINO~\cite{kang2023benchmarking} & $0.06 \pm 0.02$ & $0.12 \pm 0.04$ & $0.04 \pm 0.02$ & $0.06 \pm 0.04$ & $0.05 \pm 0.02$ & $\mathbf{0.01 \pm 0.01}$ & $0.06 \pm 0.03$ & $0.03 \pm 0.03$ & $\mathbf{0.02 \pm 0.03}$ & $0.048 \pm 0.028$ \\
+ & ViT-B~\cite{kolesnikov2021image} & $0.13 \pm 0.02$ & $0.05 \pm 0.02$ & $0.13 \pm 0.03$ & $0.07 \pm 0.05$ & $0.19 \pm 0.08$ & $0.08 \pm 0.04$ & $0.08 \pm 0.07$ & $0.11 \pm 0.03$ & $0.06 \pm 0.04$ & $0.100 \pm 0.047$ \\
+ & Phikon-S~\cite{filiot2023scaling} & $0.04 \pm 0.01$ & $0.05 \pm 0.03$ & $0.07 \pm 0.04$ & $0.07 \pm 0.05$ & $0.03 \pm 0.02$ & $0.04 \pm 0.02$ & $0.04 \pm 0.03$ & $0.08 \pm 0.05$ & $0.10 \pm 0.06$ & $0.058 \pm 0.038$ \\
+ & Phikon-T~\cite{filiot2023scaling} & $0.03 \pm 0.01$ & $\mathbf{0.03 \pm 0.04}$ & $0.05 \pm 0.04$ & $0.10 \pm 0.04$ & $0.03 \pm 0.03$ & $0.03 \pm 0.02$ & $0.05 \pm 0.03$ & $\mathbf{0.01 \pm 0.02}$ & $0.09 \pm 0.06$ & $0.047 \pm 0.034$ \\
+ & ViT-L~\cite{kolesnikov2021image} & $0.18 \pm 0.02$ & $0.07 \pm 0.04$ & $0.18 \pm 0.07$ & $0.08 \pm 0.05$ & $0.14 \pm 0.06$ & $0.16 \pm 0.09$ & $0.08 \pm 0.05$ & $0.13 \pm 0.05$ & $0.10 \pm 0.04$ & $0.124 \pm 0.055$ \\
+ & UNI~\cite{chen2024uni} & $0.01 \pm 0.01$ & $0.09 \pm 0.03$ & $\mathbf{0.01 \pm 0.02}$ & $0.11 \pm 0.03$ & $\mathbf{0.00 \pm 0.01}$ & $0.05 \pm 0.02$ & $\mathbf{0.01 \pm 0.02}$ & $0.05 \pm 0.04$ & $0.06 \pm 0.04$ & $\mathbf{0.043 \pm 0.027}$ \\
+ & ResNet-50~\cite{he2015deep} & $0.17 \pm 0.03$ & $0.15 \pm 0.05$ & $0.16 \pm 0.04$ & $\mathbf{0.02 \pm 0.03}$ & $0.17 \pm 0.04$ & $0.17 \pm 0.04$ & $0.18 \pm 0.02$ & $0.14 \pm 0.05$ & $0.23 \pm 0.06$ & $0.153 \pm 0.041$ \\
+ & RetCCL~\cite{wang2023retccl} & $0.09 \pm 0.01$ & $0.11 \pm 0.02$ & $0.13 \pm 0.03$ & $0.16 \pm 0.05$ & $0.14 \pm 0.07$ & $0.20 \pm 0.04$ & $0.05 \pm 0.03$ & $0.29 \pm 0.03$ & $0.08 \pm 0.03$ & $0.138 \pm 0.038$ \\
+ & Lunit-BT~\cite{kang2023benchmarking} & $0.17 \pm 0.04$ & $0.16 \pm 0.02$ & $0.15 \pm 0.12$ & $0.19 \pm 0.02$ & $0.53 \pm 0.06$ & $0.31 \pm 0.03$ & $0.21 \pm 0.07$ & $0.28 \pm 0.04$ & $0.08 \pm 0.06$ & $0.231 \pm 0.058$ \\
+ & Lunit-SwAV~\cite{kang2023benchmarking} & $0.11 \pm 0.01$ & $0.14 \pm 0.02$ & $0.08 \pm 0.03$ & $0.09 \pm 0.05$ & $0.08 \pm 0.05$ & $0.11 \pm 0.04$ & $0.12 \pm 0.04$ & $0.11 \pm 0.04$ & $0.08 \pm 0.04$ & $0.100 \pm 0.039$ \\
+ & Lunit-MoCo~\cite{kang2023benchmarking} & $0.05 \pm 0.01$ & $0.15 \pm 0.03$ & $0.06 \pm 0.02$ & $0.04 \pm 0.03$ & $0.08 \pm 0.05$ & $0.12 \pm 0.05$ & $0.06 \pm 0.03$ & $0.15 \pm 0.04$ & $0.05 \pm 0.03$ & $0.088 \pm 0.033$ \\
+\cline{1-12}
+\bottomrule
+\end{tabular}

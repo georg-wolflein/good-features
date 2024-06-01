@@ -2,33 +2,48 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 from contextlib import contextmanager
 
-FIGURES_DIR = "/app/figures"
+FIGURES_DIR = Path("/app/figures")
+JOURNAL_FIGURES_DIR = FIGURES_DIR / "journal"
 
-Path(FIGURES_DIR).mkdir(parents=True, exist_ok=True)
+FIGURES_DIR.mkdir(parents=True, exist_ok=True)
+JOURNAL_FIGURES_DIR.mkdir(parents=True, exist_ok=True)
 
 DPI = 800
 
 
-def savefig(name, fig=None):
+def savefig(name, fig=None, journal=False):
     if fig is None:
         fig = plt
-    fig.savefig(f"{FIGURES_DIR}/{name}.pdf", bbox_inches="tight", dpi=DPI)
-    fig.savefig(f"{FIGURES_DIR}/{name}.png", bbox_inches="tight", dpi=DPI)
+
+    figures_dir = JOURNAL_FIGURES_DIR if journal else FIGURES_DIR
+
+    fig.savefig(f"{figures_dir}/{name}.pdf", bbox_inches="tight", dpi=DPI)
+    fig.savefig(f"{figures_dir}/{name}.png", bbox_inches="tight", dpi=DPI)
 
 
-def rcparams(size="full", w=None, h=None, default_smaller=1, **kwargs):
+def rcparams(size="full", w=None, h=None, default_smaller=1, journal: bool = False, **kwargs):
     from tueplots import axes, bundles, figsizes, fontsizes
+    from .figures_extra import _figsizes_pami_half, _figsizes_pami_full, _fontsizes_pami, _bundles_pami
 
-    if size == "half":
-        rel_width = kwargs.get("rel_width", 1.0)
-        kwargs["rel_width"] = rel_width * 0.5
+    if journal:
+        bundle = _bundles_pami
+        figsize = _figsizes_pami_half if size == "half" else _figsizes_pami_full
+        fontsize = _fontsizes_pami
+    else:
+        if size == "half":
+            rel_width = kwargs.get("rel_width", 1.0)
+            kwargs["rel_width"] = rel_width * 0.5
+
+        bundle = bundles.eccv2024
+        figsize = figsizes.eccv2024
+        fontsize = fontsizes.eccv2024
 
     params = {
         **axes.lines(),
-        # **bundles.eccv2024(family="sans-serif"),
-        **bundles.eccv2024(),
-        **figsizes.eccv2024(**kwargs),
-        **fontsizes.eccv2024(default_smaller=default_smaller),
+        # **bundle(family="sans-serif"),
+        **bundle(),
+        **figsize(**kwargs),
+        **fontsize(default_smaller=default_smaller),
         "figure.dpi": DPI,
     }
     if w or h:

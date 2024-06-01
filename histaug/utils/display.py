@@ -28,7 +28,7 @@ FEATURE_EXTRACTOR_REFERENCES = {
     "owkin": "filiot2023scaling",
     "owkin_teacher": "filiot2023scaling",
     "vitl": "kolesnikov2021image",
-    "uni": "chen2023generalpurpose",
+    "uni": "chen2024uni",
     "resnet50": "he2015deep",
     "retccl": "wang2023retccl",
     "bt": "kang2023benchmarking",
