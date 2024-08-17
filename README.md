@@ -15,7 +15,7 @@ Stain normalisation is thought to be a crucial preprocessing step in computation
 
 ## Main results
 
-![](assets/performance_comparison.png)
+<center><img src="https://github.com/georg-wolflein/good-features/raw/master/assets/performance_comparison.png" width="500"></img></center>
 
 - We compare 14 feature extractors, and find that [UNI](https://www.nature.com/articles/s41591-024-02857-3), [CTransPath](https://github.com/Xiyue-Wang/TransPath) and [Lunit's DINO](https://github.com/lunit-io/benchmark-ssl-pathology) produce the best representations for downstream weakly supervised slide classification tasks.
 - We show that stain normalisation and image augmentations can be omitted without compromising downstream performance.
