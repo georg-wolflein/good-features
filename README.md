@@ -20,9 +20,11 @@ Stain normalisation is thought to be a crucial preprocessing step in computation
 - We compare 14 feature extractors, and find that [UNI](https://www.nature.com/articles/s41591-024-02857-3), [CTransPath](https://github.com/Xiyue-Wang/TransPath) and [Lunit's DINO](https://github.com/lunit-io/benchmark-ssl-pathology) produce the best representations for downstream weakly supervised slide classification tasks.
 - We show that stain normalisation and image augmentations can be omitted without compromising downstream performance.
 
-> [!NOTE] > _June 2024:_ We released an extended version of our [preprint](https://arxiv.org/abs/2311.11772v5) that includes two additional feature extractors ([UNI](https://www.nature.com/articles/s41591-024-02857-3) and ViT-L), alongside extensive additional experiments at $20\times$ magnification (to complement the original set of experiments at $\approx 9\times$ magnification).
+> [!NOTE]
+> _June 2024:_ We released an extended version of our [preprint](https://arxiv.org/abs/2311.11772v5) that includes two additional feature extractors ([UNI](https://www.nature.com/articles/s41591-024-02857-3) and ViT-L), alongside extensive additional experiments at $20\times$ magnification (to complement the original set of experiments at $\approx 9\times$ magnification).
 
-> [!NOTE] > _March 2024:_ We updated our [preprint](https://arxiv.org/abs/2311.11772v4) to include two additional feature extractors: Phikon-Teacher and Lunit-MoCo.
+> [!NOTE]
+> _March 2024:_ We updated our [preprint](https://arxiv.org/abs/2311.11772v4) to include two additional feature extractors: Phikon-Teacher and Lunit-MoCo.
 
 ## Overview
 
